@@ -95,7 +95,13 @@ func (r *PackageDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	currentListCluster := list.New()
 	pd, err := r.startRequest(ctx, req)
 	if err != nil {
+		if client.IgnoreNotFound(err) != nil {
+			r.l.Error(err, "cannot get pd")
+			return ctrl.Result{}, err
+		}
+		r.l.Info("cannot get resource, probably deleted", "error", err.Error())
 		r.l.Error(err, "Error when start Request Reconcile function", "error")
+		return ctrl.Result{}, nil
 	} else {
 		currentListCluster.PushBack(pd)
 		r.l.Info("Push Back pd. Lenght of list is", "pd", pd.Spec.Labels) //Selector.MatchLabels(map[string]string{"Type": "Infra"}))
