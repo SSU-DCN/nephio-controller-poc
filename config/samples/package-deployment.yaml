@@ -1,0 +1,12 @@
+apiVersion: automation.nephio.org/v1alpha1
+kind: PackageDeployment
+metadata:
+  name: aggregation-caching-dns-test
+spec:
+  namespace: testt
+  packageRef:
+    repository: nephio-test
+    packageName: core-dns-caching-scaled
+    revision: v2
+    packageType: workload
+

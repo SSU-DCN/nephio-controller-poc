@@ -1,0 +1,12 @@
+apiVersion: automation.nephio.org/v1alpha1
+kind: PackageDeployment
+metadata: 
+ name: infra-package-ack
+spec: 
+ selector:
+ namespace: default
+ packageRef:
+    repository: nephio-infra
+    packageName: openstack-clusterapi
+    revision: v1
+    packageType: InfraDefintion
