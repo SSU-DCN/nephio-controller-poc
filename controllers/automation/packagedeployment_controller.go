@@ -18,8 +18,12 @@ package automation
 
 import (
 	"bytes"
+	"container/list"
 	"context"
+
+	// "encoding/json"
 	"fmt"
+	// "log"
 	"strconv"
 	"strings"
 	"time"
@@ -88,7 +92,14 @@ type PackageDeploymentReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *PackageDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	currentListCluster := list.New()
 	pd, err := r.startRequest(ctx, req)
+	if err != nil {
+		r.l.Error(err, "Error when start Request Reconcile function", "error")
+	} else {
+		currentListCluster.PushBack(pd)
+		r.l.Info("Push Back pd. Lenght of list is", "pd", pd.Spec.Labels) //Selector.MatchLabels(map[string]string{"Type": "Infra"}))
+	}
 
 	// Find the clusters matching the selector
 	selector, err := metav1.LabelSelectorAsSelector(pd.Spec.Selector)
@@ -98,6 +109,9 @@ func (r *PackageDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	var clusterList infrav1alpha1.ClusterList
+	for _, c := range clusterList.Items {
+		r.l.Info("Print clusterList.Items in Reconcile function", "reconcile", c)
+	}
 	if err := r.List(ctx, &clusterList, client.MatchingLabelsSelector{Selector: selector}); err != nil {
 		r.l.Error(err, "could not list clusters", "selector", selector)
 		return ctrl.Result{}, err
@@ -170,6 +184,13 @@ func (r *PackageDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 		// Propose the package
 	}
+
+	// Add code in here to detect the new cluster and new deployment
+	if currentListCluster.Len() > 0 {
+		r.l.Info("Check the current list cluster with Cluster API")
+
+	}
+	// After detect, send request to create cluster and apply new cluster
 
 	return ctrl.Result{}, nil
 }
@@ -390,8 +411,10 @@ func (r *PackageDeploymentReconciler) startRequest(ctx context.Context, req ctrl
 		r.l.Error(err, "unable to fetch PackageDeployment")
 		return nil, client.IgnoreNotFound(err)
 	}
-
+	r.l.Info("Print automationv1alpha1 PackageDeployment. startRequest function", "packageDeployment", pd.ObjectMeta.Labels)
 	r.s = json.NewSerializerWithOptions(json.DefaultMetaFactory, nil, nil, json.SerializerOptions{Yaml: true})
+	// printobj, _ := json.Marshal(r.s)
+	r.l.Info("Print Package Deployment startRequest function", "req", req)
 	return &pd, nil
 }
 
@@ -406,10 +429,10 @@ func (r *PackageDeploymentReconciler) loadPackageRevisions(ctx context.Context) 
 	}
 
 	r.l.Info("Found packages", "count", len(prList.Items))
-
+	r.l.Info("Begin PackageRevisionMapByNS Loop PackageRevision")
 	packageRevs := make(PackageRevisionMapByNS)
 	for _, pr := range prList.Items {
-		r.l.Info("Found", "PackageRevision", pr)
+		r.l.Info("Found PackageRevision", "PackageRevision", pr)
 		if _, ok := packageRevs[pr.Namespace]; !ok {
 			packageRevs[pr.Namespace] = make(PackageRevisionMapByRepo)
 		}
@@ -425,7 +448,7 @@ func (r *PackageDeploymentReconciler) loadPackageRevisions(ctx context.Context) 
 		list = append(list, &newPR)
 		m[pr.Spec.RepositoryName][pr.Spec.PackageName][pr.Spec.Revision] = list
 	}
-
+	r.l.Info("End PackageRevisionMapByNS Loop PackageRevision")
 	r.packageRevs = packageRevs
 	return nil
 }
