@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+
 	// "container/list"
 	"encoding/json"
 	"log"
@@ -16,6 +18,8 @@ import (
 
 // Define listening port
 const serverPort string = ":3333"
+const kubectlCmd string = "kubectl"
+const clusterctlCmd string = "clusterctl"
 
 type KubeConfigMessage struct {
 	Name       string `json:"Name"`
@@ -26,6 +30,12 @@ type Message struct {
 	Name      string `json:"Name,omitempty"`
 	Phase     string `json:"Phase,omitempty"`
 	Age       string `json:"Age,omitempty"`
+}
+type ClusterConfigurations struct {
+	ClusterName              string `json:"ClusterName"`
+	KubernetesVersion        string `json:"KubernetesVersion"`
+	ControlPlaneMachineCount string `json:"ControlPlaneMachineCount"`
+	KubernetesMachineCount   string `json:"KubernetesMachineCount"`
 }
 
 func main() {
@@ -133,6 +143,54 @@ func main() {
 
 		}
 
+		w.Write([]byte(string(stdout)))
+	})
+
+	r.Post("/createNewCluster", func(w http.ResponseWriter, r *http.Request) {
+
+		// defer r.Body.Close()
+
+		httpPostBody, err := ioutil.ReadAll(r.Body) //<--- here!
+
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(string(httpPostBody))
+		var clusterConfig ClusterConfigurations
+		err = json.Unmarshal(httpPostBody, &clusterConfig)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println((clusterConfig))
+
+		// prg := "echo " + httpPostBody
+		// arg := " | kubectl apply -f -"
+		// cmd := exec.Command(prg, arg)
+		// stdout, err := cmd.Output()
+
+		// if err != nil {
+		// 	fmt.Println(err.Error())
+		// 	log.Fatal(err)
+		// 	return
+		// }
+		w.Write([]byte(string("stdout")))
+	})
+
+	r.Post("/generateNewCluster", func(w http.ResponseWriter, r *http.Request) {
+
+		var httpPostBody string = string("Test")
+
+		prg := "echo " + httpPostBody
+		arg := " | kubectl apply -f -"
+		cmd := exec.Command(prg, arg)
+		stdout, err := cmd.Output()
+
+		if err != nil {
+			fmt.Println(err.Error())
+			log.Fatal(err)
+			return
+		}
 		w.Write([]byte(string(stdout)))
 	})
 
