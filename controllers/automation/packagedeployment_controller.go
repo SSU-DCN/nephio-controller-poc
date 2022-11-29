@@ -76,7 +76,56 @@ type PackageDeploymentReconciler struct {
 	l           logr.Logger
 	s           *json.Serializer
 }
+type ClusterRecord struct {
+	Name                     string
+	InfraType                string
+	Labels                   map[string]string
+	Repository               string
+	Provider                 string
+	ProvisionMethod          string
+	Namespace                string
+	KubernetesVersion        string
+	ControlPlaneMachineCount int
+	KubernetesMachineCount   int
+}
+type ClusterRecordList struct {
+	Items []ClusterRecord
+}
 
+type InfraRecord struct {
+	Name                     string
+	InfraType                string
+	Labels                   map[string]string
+	Provider                 string
+	ProvisionMethod          string
+	Namespace                string
+	KubernetesVersion        string
+	ControlPlaneMachineCount int
+	KubernetesMachineCount   int
+}
+type InfraRecordList struct {
+	Items []InfraRecord
+}
+
+// ===========================VARIABLES======================
+// Store digested Cluster Package Deployment (after Reconcile)
+var ClusterDeploymentPackages ClusterRecordList
+
+// Store Current Cluster Package Deployment (While Reconcile )
+
+var CurrentClusterDeploymentPackages ClusterRecordList
+
+// Store Infra Package Deployment (After Reconcile)
+
+var InfraDeploymentPackages InfraRecordList
+
+// Store Current Infra Package Deployment (while Reconcile)
+
+var CurrentInfraDeploymentPackages InfraRecordList
+
+// =======================================================
+//
+//
 //+kubebuilder:rbac:groups=automation.nephio.org,resources=packagedeployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=automation.nephio.org,resources=packagedeployments/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=automation.nephio.org,resources=packagedeployments/finalizers,verbs=update
@@ -105,6 +154,8 @@ func (r *PackageDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	} else {
 		currentListCluster.PushBack(pd)
 		r.l.Info("Push Back pd. Lenght of list is", "pd", pd.Spec.Labels) //Selector.MatchLabels(map[string]string{"Type": "Infra"}))
+		r.l.Info("Print currentListCluster.PushBack(pd)", "pd", pd)
+
 	}
 
 	// Find the clusters matching the selector
@@ -118,6 +169,18 @@ func (r *PackageDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	for _, c := range clusterList.Items {
 		r.l.Info("Print clusterList.Items in Reconcile function", "reconcile", c)
 	}
+
+	// List all Package Deployment in API Server r.List()
+	var allPackageDeploymentList automationv1alpha1.PackageDeploymentList
+
+	if err := r.List(ctx, &allPackageDeploymentList, client.MatchingLabelsSelector{Selector: selector}); err != nil {
+		r.l.Error(err, "could not list clusters", "selector", selector)
+		return ctrl.Result{}, err
+	} else {
+		r.l.Info("Print List all Deployment Package in API Server", "pd", pd)
+
+	}
+	////
 	if err := r.List(ctx, &clusterList, client.MatchingLabelsSelector{Selector: selector}); err != nil {
 		r.l.Error(err, "could not list clusters", "selector", selector)
 		return ctrl.Result{}, err
@@ -417,7 +480,16 @@ func (r *PackageDeploymentReconciler) startRequest(ctx context.Context, req ctrl
 		r.l.Error(err, "unable to fetch PackageDeployment")
 		return nil, client.IgnoreNotFound(err)
 	}
-	r.l.Info("Print automationv1alpha1 PackageDeployment. startRequest function", "packageDeployment", pd.ObjectMeta.Labels)
+	r.l.Info("Print automationv1alpha1 PackageDeployment. startRequest function", "pd.Spec.Labels", pd.GetLabels())
+	// Check is PAckage Deployment is Cluster Package
+	if isPackageDeploymentCluster(pd) {
+		// Package is Deployment Cluster
+		if isExistinClusterList(CurrentClusterDeploymentPackages, pd) {
+			appendtoClusterList(&CurrentClusterDeploymentPackages, pd)
+		}
+		// CurrentClusterDeploymentPackages
+	}
+	//
 	r.s = json.NewSerializerWithOptions(json.DefaultMetaFactory, nil, nil, json.SerializerOptions{Yaml: true})
 	// printobj, _ := json.Marshal(r.s)
 	r.l.Info("Print Package Deployment startRequest function", "req", req)
@@ -817,4 +889,58 @@ func (r *PackageDeploymentReconciler) getUpstreamRevisions(ctx context.Context, 
 		}
 	}
 	return result, nil
+}
+
+func appendtoClusterList(list *ClusterRecordList, pd automationv1alpha1.PackageDeployment) {
+	var item ClusterRecord
+	item.Name = pd.Name
+	item.InfraType = pd.GetLabels()["InfraType"]
+	// item.Repository =
+	list.Items = append(list.Items, item)
+}
+func isExistinClusterList(list ClusterRecordList, item automationv1alpha1.PackageDeployment) bool {
+	infraName := item.ObjectMeta.Name
+	for _, iter := range list.Items {
+		if iter.Name == infraName {
+			return true
+		}
+	}
+	return false
+}
+func isPackageDeploymentCluster(pd automationv1alpha1.PackageDeployment) bool {
+	pdLabels := pd.GetLabels()
+	if val, ok := pdLabels["Type"]; ok {
+		if val == "Cluster" {
+			return true
+		}
+		return false
+	}
+	return false
+}
+
+func appendtoInfraList(list *InfraRecordList, pd automationv1alpha1.PackageDeployment) {
+	var item InfraRecord
+	item.Name = pd.Name
+	item.Namespace = pd.Namespace
+	item.Labels = pd.GetLabels()
+	list.Items = append(list.Items, item)
+}
+func isPackageDeploymentInfra(pd automationv1alpha1.PackageDeployment) bool {
+	pdLabels := pd.GetLabels()
+	if val, ok := pdLabels["Type"]; ok {
+		if val == "Infra" {
+			return true
+		}
+		return false
+	}
+	return false
+}
+func isExistinInfraList(list InfraRecordList, item automationv1alpha1.PackageDeployment) bool {
+	infraName := item.ObjectMeta.Name
+	for _, iter := range list.Items {
+		if iter.Name == infraName {
+			return true
+		}
+	}
+	return false
 }
