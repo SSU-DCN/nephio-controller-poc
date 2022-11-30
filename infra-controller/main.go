@@ -37,6 +37,36 @@ type ClusterConfigurations struct {
 	ControlPlaneMachineCount string `json:"ControlPlaneMachineCount"`
 	KubernetesMachineCount   string `json:"KubernetesMachineCount"`
 }
+type ClusterRecord struct {
+	Name                     string            `json:"name,omitempty"`
+	InfraType                string            `json:"infraType,omitempty"`
+	Labels                   map[string]string `json:"labels,omitempty"`
+	Repository               string            `json:"repository,omitempty"`
+	Provider                 string            `json:"provider,omitempty"`
+	ProvisionMethod          string            `json:"provisionMethod,omitempty"`
+	Namespace                string            `json:"namespace,omitempty"`
+	KubernetesVersion        string            `json:"pubernetesVersion,omitempty"`
+	ControlPlaneMachineCount string            `json:"controlPlaneMachineCount,omitempty"`
+	KubernetesMachineCount   string            `json:"kubernetesMachineCount,omitempty"`
+}
+type ClusterRecordList struct {
+	Items []ClusterRecord
+}
+
+type InfraRecord struct {
+	Name                     string            `json:"name,omitempty"`
+	InfraType                string            `json:"infraType,omitempty"`
+	Labels                   map[string]string `json:"labels,omitempty"`
+	Provider                 string            `json:"provider,omitempty"`
+	ProvisionMethod          string            `json:"provisionMethod,omitempty"`
+	Namespace                string            `json:"namespace,omitempty"`
+	KubernetesVersion        string            `json:"kubernetesVersion,omitempty"`
+	ControlPlaneMachineCount string            `json:"controlPlaneMachineCount,omitempty"`
+	KubernetesMachineCount   string            `json:"kubernetesMachineCount,omitempty"`
+}
+type InfraRecordList struct {
+	Items []InfraRecord
+}
 
 func main() {
 	// currentListCluster := list.newList()
@@ -192,6 +222,64 @@ func main() {
 			return
 		}
 		w.Write([]byte(string(stdout)))
+	})
+
+	r.Post("/updateClusterPackageCluster", func(w http.ResponseWriter, r *http.Request) {
+		// defer r.Body.Close()
+
+		httpPostBody, err := ioutil.ReadAll(r.Body) //<--- here!
+
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(string(httpPostBody))
+		// var packageDeployment ClusterRecord
+		// err = json.Unmarshal(httpPostBody, &packageDeployment)
+
+		// if err != nil {
+		// 	fmt.Println(err)
+		// }
+
+		// prg := "echo " + httpPostBody
+		// arg := " | kubectl apply -f -"
+		// cmd := exec.Command(prg, arg)
+		// stdout, err := cmd.Output()
+
+		// if err != nil {
+		// 	fmt.Println(err.Error())
+		// 	log.Fatal(err)
+		// 	return
+		// }
+		w.Write([]byte("received Cluster Package"))
+	})
+
+	r.Post("/updateInfraPackageCluster", func(w http.ResponseWriter, r *http.Request) {
+		// defer r.Body.Close()
+
+		httpPostBody, err := ioutil.ReadAll(r.Body) //<--- here!
+
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(string(httpPostBody))
+		// var packageDeployment ClusterRecord
+		// err = json.Unmarshal(httpPostBody, &packageDeployment)
+
+		// if err != nil {
+		// 	fmt.Println(err)
+		// }
+
+		// prg := "echo " + httpPostBody
+		// arg := " | kubectl apply -f -"
+		// cmd := exec.Command(prg, arg)
+		// stdout, err := cmd.Output()
+
+		// if err != nil {
+		// 	fmt.Println(err.Error())
+		// 	log.Fatal(err)
+		// 	return
+		// }
+		w.Write([]byte("received Infra Package"))
 	})
 
 	http.ListenAndServe(serverPort, r)

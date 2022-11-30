@@ -21,8 +21,10 @@ import (
 	"container/list"
 	"context"
 
-	// "encoding/json"
+	jsonOrg "encoding/json"
 	"fmt"
+	"net/http"
+
 	// "log"
 	"strconv"
 	"strings"
@@ -92,16 +94,16 @@ type PackageDeploymentReconciler struct {
 	CurrentInfraDeploymentPackages *InfraRecordList
 }
 type ClusterRecord struct {
-	Name                     string
-	InfraType                string
-	Labels                   map[string]string
-	Repository               string
-	Provider                 string
-	ProvisionMethod          string
-	Namespace                string
-	KubernetesVersion        string
-	ControlPlaneMachineCount int
-	KubernetesMachineCount   int
+	Name                     string            `json:"name,omitempty"`
+	InfraType                string            `json:"infraType,omitempty"`
+	Labels                   map[string]string `json:"labels,omitempty"`
+	Repository               string            `json:"repository,omitempty"`
+	Provider                 string            `json:"provider,omitempty"`
+	ProvisionMethod          string            `json:"provisionMethod,omitempty"`
+	Namespace                string            `json:"namespace,omitempty"`
+	KubernetesVersion        string            `json:"pubernetesVersion,omitempty"`
+	ControlPlaneMachineCount string            `json:"controlPlaneMachineCount,omitempty"`
+	KubernetesMachineCount   string            `json:"kubernetesMachineCount,omitempty"`
 }
 type ClusterRecordList struct {
 	Items []ClusterRecord
@@ -121,6 +123,8 @@ type InfraRecord struct {
 type InfraRecordList struct {
 	Items []InfraRecord
 }
+
+const InfraControllerUrl string = "http://127.0.0.1:3333/updatePackageCluster"
 
 // ===========================VARIABLES======================
 // Store digested Cluster Package Deployment (after Reconcile)
@@ -491,6 +495,7 @@ func (r *PackageDeploymentReconciler) startRequest(ctx context.Context, req ctrl
 			r.appendtoClusterList(r.CurrentClusterDeploymentPackages, pd)
 		}
 		// CurrentClusterDeploymentPackages
+
 	}
 
 	// Check is Package Deployment is Infra Package
@@ -907,8 +912,11 @@ func (r *PackageDeploymentReconciler) appendtoClusterList(list *ClusterRecordLis
 	item.Name = pd.Name
 	item.InfraType = pd.GetLabels()["infraType"]
 	item.Repository = pd.Spec.PackageRef.RepositoryName
+	item.Namespace = *(pd.Spec.Namespace)
+
 	r.l.Info("appendtoClusterList function", "ClusterRecord", item)
 	(*list).Items = append((*list).Items, item)
+	go sendUpdateClusterDeploymentPackage(InfraControllerUrl, item)
 }
 func (r *PackageDeploymentReconciler) isExistingClusterList(list *ClusterRecordList, item automationv1alpha1.PackageDeployment) bool {
 	clusterName := item.ObjectMeta.Name
@@ -967,4 +975,41 @@ func (r *PackageDeploymentReconciler) isExistingInfraList(list *InfraRecordList,
 		}
 	}
 	return false
+}
+
+func sendUpdateClusterDeploymentPackage(url string, data ClusterRecord) bool {
+	// func sendUpdateDeploymentPackage(url string) bool {
+	jsonBytesData, error := jsonOrg.Marshal(data)
+	if error != nil {
+		return false
+	}
+	request, error := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytesData))
+	request.Header.Set("Content-Type", "application/json; charset=UTF-8")
+	client := &http.Client{}
+	response, error := client.Do(request)
+	if error != nil {
+		return false
+	}
+
+	fmt.Println("Sent Cluster package. response Status:", response.Status)
+
+	return true
+}
+func sendUpdateInfraDeploymentPackage(url string, data InfraRecord) bool {
+	// func sendUpdateDeploymentPackage(url string) bool {
+	jsonBytesData, error := jsonOrg.Marshal(data)
+	if error != nil {
+		return false
+	}
+	request, error := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytesData))
+	request.Header.Set("Content-Type", "application/json; charset=UTF-8")
+	client := &http.Client{}
+	response, error := client.Do(request)
+	if error != nil {
+		return false
+	}
+
+	fmt.Println("sent Infra package. response Status:", response.Status)
+
+	return true
 }
