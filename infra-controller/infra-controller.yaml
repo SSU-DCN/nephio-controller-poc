@@ -1,0 +1,22 @@
+
+apiVersion: apps/v1 
+kind: Deployment 
+metadata:
+  name: provider-api-service-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: provider-api-service
+  template:
+    metadata:
+      labels:
+        app: provider-api-service
+    spec:
+      containers:
+      - name: provider-api-service-deployment
+        image: busybox:stable
+        imagePullPolicy: IfNotPresent 
+        command: ['sh', '-c', 'sleep 500']
+        # ports:
+          # - containerPort: 3333
