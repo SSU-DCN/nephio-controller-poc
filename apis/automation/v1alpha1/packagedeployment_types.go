@@ -69,6 +69,15 @@ type PackageDeploymentSpec struct {
 
 	// Labels will be applied to all package revisions
 	Labels map[string]string `json:"labels,omitempty"`
+
+	// Kubernetes Version
+	KubernetesVersion string `json:"kubernetesVersion"`
+
+	// Control Plane Machine Count
+	ControlPlaneMachineCount string `json:"controlPlaneMachineCount"`
+
+	// Kubernetes Machine Count
+	KubernetesMachineCount string `json:"kubernetesMachineCount"`
 }
 
 // PackageDeploymentStatus defines the observed state of PackageDeployment

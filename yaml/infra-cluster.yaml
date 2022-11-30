@@ -13,8 +13,9 @@ spec:
       nephio.org/site-type: aggregation
   namespace: default
   kubernetesVersion: v1.25.0
-  controlPlaneMachineCount: 1
-  kubernetesMachineCount: 1
+  controlPlaneMachineCount: "1"
+  kubernetesMachineCount: "1"
   packageRef:
+    repository: nephio-packages
     packageName: kubernetes-template-cluster-api
     revision: v1

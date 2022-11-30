@@ -75,6 +75,21 @@ type PackageDeploymentReconciler struct {
 	packageRevs PackageRevisionMapByNS
 	l           logr.Logger
 	s           *json.Serializer
+
+	//---VARIABLES-----
+	ClusterDeploymentPackages ClusterRecordList
+
+	// Store Current Cluster Package Deployment (While Reconcile )
+
+	CurrentClusterDeploymentPackages ClusterRecordList
+
+	// Store Infra Package Deployment (After Reconcile)
+
+	InfraDeploymentPackages InfraRecordList
+
+	// Store Current Infra Package Deployment (while Reconcile)
+
+	CurrentInfraDeploymentPackages InfraRecordList
 }
 type ClusterRecord struct {
 	Name                     string
@@ -109,19 +124,6 @@ type InfraRecordList struct {
 
 // ===========================VARIABLES======================
 // Store digested Cluster Package Deployment (after Reconcile)
-var ClusterDeploymentPackages ClusterRecordList
-
-// Store Current Cluster Package Deployment (While Reconcile )
-
-var CurrentClusterDeploymentPackages ClusterRecordList
-
-// Store Infra Package Deployment (After Reconcile)
-
-var InfraDeploymentPackages InfraRecordList
-
-// Store Current Infra Package Deployment (while Reconcile)
-
-var CurrentInfraDeploymentPackages InfraRecordList
 
 // =======================================================
 //
@@ -480,15 +482,23 @@ func (r *PackageDeploymentReconciler) startRequest(ctx context.Context, req ctrl
 		r.l.Error(err, "unable to fetch PackageDeployment")
 		return nil, client.IgnoreNotFound(err)
 	}
-	r.l.Info("Print automationv1alpha1 PackageDeployment. startRequest function", "pd.Spec.Labels", pd.GetLabels())
+
 	// Check is PAckage Deployment is Cluster Package
-	if isPackageDeploymentCluster(pd) {
+
+	if r.isPackageDeploymentCluster(pd) {
+		r.l.Info("Print inside isPackageDeploymentCluster function", "pd", pd)
 		// Package is Deployment Cluster
-		if isExistinClusterList(CurrentClusterDeploymentPackages, pd) {
-			appendtoClusterList(&CurrentClusterDeploymentPackages, pd)
-		}
+		// if r.isExistingClusterList(CurrentClusterDeploymentPackages, pd) {
+		// r.appendtoClusterList(&CurrentClusterDeploymentPackages, pd)
+		// }
 		// CurrentClusterDeploymentPackages
 	}
+
+	// Check is Package Deployment is Infra Package
+	if r.isPackageDeploymentInfra(pd) {
+		r.l.Info("Print inside isPackageDeploymentInfra function", "pd", pd)
+	}
+
 	//
 	r.s = json.NewSerializerWithOptions(json.DefaultMetaFactory, nil, nil, json.SerializerOptions{Yaml: true})
 	// printobj, _ := json.Marshal(r.s)
@@ -891,25 +901,28 @@ func (r *PackageDeploymentReconciler) getUpstreamRevisions(ctx context.Context, 
 	return result, nil
 }
 
-func appendtoClusterList(list *ClusterRecordList, pd automationv1alpha1.PackageDeployment) {
+func (r *PackageDeploymentReconciler) appendtoClusterList(list *ClusterRecordList, pd automationv1alpha1.PackageDeployment) {
 	var item ClusterRecord
 	item.Name = pd.Name
-	item.InfraType = pd.GetLabels()["InfraType"]
+	item.InfraType = pd.GetLabels()["infraType"]
 	// item.Repository =
+	r.l.Info("appendtoClusterList function", "ClusterRecord", item)
 	list.Items = append(list.Items, item)
 }
-func isExistinClusterList(list ClusterRecordList, item automationv1alpha1.PackageDeployment) bool {
-	infraName := item.ObjectMeta.Name
+func (r *PackageDeploymentReconciler) isExistingClusterList(list ClusterRecordList, item automationv1alpha1.PackageDeployment) bool {
+	clusterName := item.ObjectMeta.Name
+	r.l.Info("isExistingClusterList function", "function", clusterName, "object", item)
 	for _, iter := range list.Items {
-		if iter.Name == infraName {
+		if iter.Name == clusterName {
 			return true
 		}
 	}
 	return false
 }
-func isPackageDeploymentCluster(pd automationv1alpha1.PackageDeployment) bool {
+func (r *PackageDeploymentReconciler) isPackageDeploymentCluster(pd automationv1alpha1.PackageDeployment) bool {
 	pdLabels := pd.GetLabels()
-	if val, ok := pdLabels["Type"]; ok {
+	r.l.Info("isPackageDeploymentCluster function", "function", pdLabels, "object", pd)
+	if val, ok := pdLabels["type"]; ok {
 		if val == "Cluster" {
 			return true
 		}
@@ -918,16 +931,18 @@ func isPackageDeploymentCluster(pd automationv1alpha1.PackageDeployment) bool {
 	return false
 }
 
-func appendtoInfraList(list *InfraRecordList, pd automationv1alpha1.PackageDeployment) {
+func (r *PackageDeploymentReconciler) appendtoInfraList(list *InfraRecordList, pd automationv1alpha1.PackageDeployment) {
 	var item InfraRecord
 	item.Name = pd.Name
 	item.Namespace = pd.Namespace
 	item.Labels = pd.GetLabels()
 	list.Items = append(list.Items, item)
 }
-func isPackageDeploymentInfra(pd automationv1alpha1.PackageDeployment) bool {
+func (r *PackageDeploymentReconciler) isPackageDeploymentInfra(pd automationv1alpha1.PackageDeployment) bool {
+
 	pdLabels := pd.GetLabels()
-	if val, ok := pdLabels["Type"]; ok {
+	r.l.Info("isPackageDeploymentInfra function", "function", pdLabels, "object", pd)
+	if val, ok := pdLabels["type"]; ok {
 		if val == "Infra" {
 			return true
 		}
@@ -935,8 +950,9 @@ func isPackageDeploymentInfra(pd automationv1alpha1.PackageDeployment) bool {
 	}
 	return false
 }
-func isExistinInfraList(list InfraRecordList, item automationv1alpha1.PackageDeployment) bool {
+func (r *PackageDeploymentReconciler) isExistingInfraList(list InfraRecordList, item automationv1alpha1.PackageDeployment) bool {
 	infraName := item.ObjectMeta.Name
+	r.l.Info("isExistingInfraList function", "function", infraName, "object", item)
 	for _, iter := range list.Items {
 		if iter.Name == infraName {
 			return true

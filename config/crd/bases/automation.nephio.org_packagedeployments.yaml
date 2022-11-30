@@ -40,6 +40,15 @@ spec:
                   type: string
                 description: Annotations will be applied to all package revisions
                 type: object
+              controlPlaneMachineCount:
+                description: Control Plane Machine Count
+                type: string
+              kubernetesMachineCount:
+                description: Kubernetes Machine Count
+                type: string
+              kubernetesVersion:
+                description: Kubernetes Version
+                type: string
               labels:
                 additionalProperties:
                   type: string
@@ -125,6 +134,9 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
             required:
+            - controlPlaneMachineCount
+            - kubernetesMachineCount
+            - kubernetesVersion
             - packageRef
             type: object
           status:
