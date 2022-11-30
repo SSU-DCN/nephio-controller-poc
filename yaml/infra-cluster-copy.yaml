@@ -1,0 +1,21 @@
+apiVersion: automation.nephio.org/v1alpha1
+kind: PackageDeployment
+metadata:
+  name: openstack-small-edge-cluster1
+  labels: 
+    type: Infra
+  provider: OpenStack
+  provisionMethod: Cluster-API
+spec:
+  selector:
+    matchLabels:
+      nephio.org/region: us-central1
+      nephio.org/site-type: aggregation
+  namespace: default
+  kubernetesVersion: v1.25.0
+  controlPlaneMachineCount: "2"
+  kubernetesMachineCount: "2"
+  packageRef:
+    repository: nephio-packages
+    packageName: kubernetes-template-cluster-api
+    revision: v1

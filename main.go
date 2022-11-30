@@ -43,6 +43,20 @@ import (
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
+	//---VARIABLES-----
+	ClusterDeploymentPackages automationcontrollers.ClusterRecordList
+
+	// Store Current Cluster Package Deployment (While Reconcile )
+
+	CurrentClusterDeploymentPackages automationcontrollers.ClusterRecordList
+
+	// Store Infra Package Deployment (After Reconcile)
+
+	InfraDeploymentPackages automationcontrollers.InfraRecordList
+
+	// Store Current Infra Package Deployment (while Reconcile)
+
+	CurrentInfraDeploymentPackages automationcontrollers.InfraRecordList
 )
 
 func init() {
@@ -103,9 +117,13 @@ func main() {
 	}
 
 	if err = (&automationcontrollers.PackageDeploymentReconciler{
-		Client:      mgr.GetClient(),
-		Scheme:      mgr.GetScheme(),
-		PorchClient: porchClient,
+		Client:                           mgr.GetClient(),
+		Scheme:                           mgr.GetScheme(),
+		PorchClient:                      porchClient,
+		ClusterDeploymentPackages:        &ClusterDeploymentPackages,
+		CurrentClusterDeploymentPackages: &CurrentClusterDeploymentPackages,
+		InfraDeploymentPackages:          &InfraDeploymentPackages,
+		CurrentInfraDeploymentPackages:   &CurrentInfraDeploymentPackages,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "PackageDeployment")
 		os.Exit(1)

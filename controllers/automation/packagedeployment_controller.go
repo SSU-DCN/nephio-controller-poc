@@ -77,19 +77,19 @@ type PackageDeploymentReconciler struct {
 	s           *json.Serializer
 
 	//---VARIABLES-----
-	ClusterDeploymentPackages ClusterRecordList
+	ClusterDeploymentPackages *ClusterRecordList
 
 	// Store Current Cluster Package Deployment (While Reconcile )
 
-	CurrentClusterDeploymentPackages ClusterRecordList
+	CurrentClusterDeploymentPackages *ClusterRecordList
 
 	// Store Infra Package Deployment (After Reconcile)
 
-	InfraDeploymentPackages InfraRecordList
+	InfraDeploymentPackages *InfraRecordList
 
 	// Store Current Infra Package Deployment (while Reconcile)
 
-	CurrentInfraDeploymentPackages InfraRecordList
+	CurrentInfraDeploymentPackages *InfraRecordList
 }
 type ClusterRecord struct {
 	Name                     string
@@ -115,8 +115,8 @@ type InfraRecord struct {
 	ProvisionMethod          string
 	Namespace                string
 	KubernetesVersion        string
-	ControlPlaneMachineCount int
-	KubernetesMachineCount   int
+	ControlPlaneMachineCount string
+	KubernetesMachineCount   string
 }
 type InfraRecordList struct {
 	Items []InfraRecord
@@ -486,23 +486,24 @@ func (r *PackageDeploymentReconciler) startRequest(ctx context.Context, req ctrl
 	// Check is PAckage Deployment is Cluster Package
 
 	if r.isPackageDeploymentCluster(pd) {
-		r.l.Info("Print inside isPackageDeploymentCluster function", "pd", pd)
 		// Package is Deployment Cluster
-		// if r.isExistingClusterList(CurrentClusterDeploymentPackages, pd) {
-		// r.appendtoClusterList(&CurrentClusterDeploymentPackages, pd)
-		// }
+		if !(r.isExistingClusterList(r.CurrentClusterDeploymentPackages, pd)) {
+			r.appendtoClusterList(r.CurrentClusterDeploymentPackages, pd)
+		}
 		// CurrentClusterDeploymentPackages
 	}
 
 	// Check is Package Deployment is Infra Package
 	if r.isPackageDeploymentInfra(pd) {
-		r.l.Info("Print inside isPackageDeploymentInfra function", "pd", pd)
+		// r.l.Info("Print inside isPackageDeploymentInfra function", "pd", pd)
+		if !(r.isExistingInfraList(r.CurrentInfraDeploymentPackages, pd)) {
+			r.appendtoInfraList(r.CurrentInfraDeploymentPackages, pd)
+		}
 	}
 
 	//
 	r.s = json.NewSerializerWithOptions(json.DefaultMetaFactory, nil, nil, json.SerializerOptions{Yaml: true})
-	// printobj, _ := json.Marshal(r.s)
-	r.l.Info("Print Package Deployment startRequest function", "req", req)
+
 	return &pd, nil
 }
 
@@ -905,14 +906,17 @@ func (r *PackageDeploymentReconciler) appendtoClusterList(list *ClusterRecordLis
 	var item ClusterRecord
 	item.Name = pd.Name
 	item.InfraType = pd.GetLabels()["infraType"]
-	// item.Repository =
+	item.Repository = pd.Spec.PackageRef.RepositoryName
 	r.l.Info("appendtoClusterList function", "ClusterRecord", item)
-	list.Items = append(list.Items, item)
+	(*list).Items = append((*list).Items, item)
 }
-func (r *PackageDeploymentReconciler) isExistingClusterList(list ClusterRecordList, item automationv1alpha1.PackageDeployment) bool {
+func (r *PackageDeploymentReconciler) isExistingClusterList(list *ClusterRecordList, item automationv1alpha1.PackageDeployment) bool {
 	clusterName := item.ObjectMeta.Name
-	r.l.Info("isExistingClusterList function", "function", clusterName, "object", item)
-	for _, iter := range list.Items {
+
+	if len((*list).Items) < 1 {
+		return false
+	}
+	for _, iter := range (*list).Items {
 		if iter.Name == clusterName {
 			return true
 		}
@@ -921,7 +925,6 @@ func (r *PackageDeploymentReconciler) isExistingClusterList(list ClusterRecordLi
 }
 func (r *PackageDeploymentReconciler) isPackageDeploymentCluster(pd automationv1alpha1.PackageDeployment) bool {
 	pdLabels := pd.GetLabels()
-	r.l.Info("isPackageDeploymentCluster function", "function", pdLabels, "object", pd)
 	if val, ok := pdLabels["type"]; ok {
 		if val == "Cluster" {
 			return true
@@ -936,12 +939,15 @@ func (r *PackageDeploymentReconciler) appendtoInfraList(list *InfraRecordList, p
 	item.Name = pd.Name
 	item.Namespace = pd.Namespace
 	item.Labels = pd.GetLabels()
-	list.Items = append(list.Items, item)
+	item.ControlPlaneMachineCount = pd.Spec.ControlPlaneMachineCount
+	item.KubernetesMachineCount = pd.Spec.KubernetesMachineCount
+	item.KubernetesVersion = pd.Spec.KubernetesVersion
+	// Append to List
+	(*list).Items = append((*list).Items, item)
 }
 func (r *PackageDeploymentReconciler) isPackageDeploymentInfra(pd automationv1alpha1.PackageDeployment) bool {
 
 	pdLabels := pd.GetLabels()
-	r.l.Info("isPackageDeploymentInfra function", "function", pdLabels, "object", pd)
 	if val, ok := pdLabels["type"]; ok {
 		if val == "Infra" {
 			return true
@@ -950,10 +956,12 @@ func (r *PackageDeploymentReconciler) isPackageDeploymentInfra(pd automationv1al
 	}
 	return false
 }
-func (r *PackageDeploymentReconciler) isExistingInfraList(list InfraRecordList, item automationv1alpha1.PackageDeployment) bool {
+func (r *PackageDeploymentReconciler) isExistingInfraList(list *InfraRecordList, item automationv1alpha1.PackageDeployment) bool {
 	infraName := item.ObjectMeta.Name
-	r.l.Info("isExistingInfraList function", "function", infraName, "object", item)
-	for _, iter := range list.Items {
+	if len((*list).Items) < 1 {
+		return false
+	}
+	for _, iter := range (*list).Items {
 		if iter.Name == infraName {
 			return true
 		}
