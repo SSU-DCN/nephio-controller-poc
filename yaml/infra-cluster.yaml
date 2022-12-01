@@ -4,8 +4,6 @@ metadata:
   name: openstack-small-edge-cluster
   labels: 
     type: Infra
-  provider: OpenStack
-  provisionMethod: Cluster-API
 spec:
   selector:
     matchLabels:
@@ -15,6 +13,8 @@ spec:
   kubernetesVersion: v1.25.0
   controlPlaneMachineCount: "1"
   kubernetesMachineCount: "1"
+  provider: OpenStack
+  provisionMethod: Cluster-API
   packageRef:
     repository: nephio-packages
     packageName: kubernetes-template-cluster-api

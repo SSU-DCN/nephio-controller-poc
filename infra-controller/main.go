@@ -231,7 +231,7 @@ func main() {
 		w.Write([]byte(string(stdout)))
 	})
 
-	r.Post("/updateClusterPackageCluster", func(w http.ResponseWriter, r *http.Request) {
+	r.Post("/updateClusterPackage", func(w http.ResponseWriter, r *http.Request) {
 		// defer r.Body.Close()
 
 		httpPostBody, err := ioutil.ReadAll(r.Body) //<--- here!
@@ -260,7 +260,7 @@ func main() {
 		w.Write([]byte("received Cluster Package"))
 	})
 
-	r.Post("/updateInfraPackageCluster", func(w http.ResponseWriter, r *http.Request) {
+	r.Post("/updateInfraPackage", func(w http.ResponseWriter, r *http.Request) {
 		// defer r.Body.Close()
 
 		httpPostBody, err := ioutil.ReadAll(r.Body) //<--- here!

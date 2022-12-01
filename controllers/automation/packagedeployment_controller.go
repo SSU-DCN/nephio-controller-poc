@@ -124,7 +124,8 @@ type InfraRecordList struct {
 	Items []InfraRecord
 }
 
-const InfraControllerUrl string = "http://127.0.0.1:3333/updatePackageCluster"
+const InfraControllerUrlForClusterPackage string = "http://127.0.0.1:3333/updateClusterPackage"
+const InfraControllerUrlForInfraPackage string = "http://127.0.0.1:3333/updateInfraPackage"
 
 // ===========================VARIABLES======================
 // Store digested Cluster Package Deployment (after Reconcile)
@@ -912,11 +913,12 @@ func (r *PackageDeploymentReconciler) appendtoClusterList(list *ClusterRecordLis
 	item.Name = pd.Name
 	item.InfraType = pd.GetLabels()["infraType"]
 	item.Repository = pd.Spec.PackageRef.RepositoryName
-	item.Namespace = *(pd.Spec.Namespace)
+	item.Labels = pd.GetLabels()
+	// item.Namespace = *pd.Spec.Namespace
 
-	r.l.Info("appendtoClusterList function", "ClusterRecord", item)
+	r.l.Info("appendtoClusterList function", "ClusterRecord", item, "automationv1alpha1.PackageDeployment", pd)
 	(*list).Items = append((*list).Items, item)
-	go sendUpdateClusterDeploymentPackage(InfraControllerUrl, item)
+	go sendUpdateClusterDeploymentPackage(InfraControllerUrlForClusterPackage, item)
 }
 func (r *PackageDeploymentReconciler) isExistingClusterList(list *ClusterRecordList, item automationv1alpha1.PackageDeployment) bool {
 	clusterName := item.ObjectMeta.Name
@@ -950,8 +952,14 @@ func (r *PackageDeploymentReconciler) appendtoInfraList(list *InfraRecordList, p
 	item.ControlPlaneMachineCount = pd.Spec.ControlPlaneMachineCount
 	item.KubernetesMachineCount = pd.Spec.KubernetesMachineCount
 	item.KubernetesVersion = pd.Spec.KubernetesVersion
+	// r.l.Info("appendtoInfraList function", "pd.TypeMeta", pd.ObjectMeta)
+	// objectMetaData := pd.TypeMeta
+	item.Provider = pd.Spec.Provider               //item.Labels["provider"]
+	item.ProvisionMethod = pd.Spec.ProvisionMethod //item.Labels["provisionMethod"]
 	// Append to List
 	(*list).Items = append((*list).Items, item)
+	r.l.Info("appendtoInfraList function", "ClusterRecord", item, "automationv1alpha1.PackageDeployment", pd)
+	go sendUpdateInfraDeploymentPackage(InfraControllerUrlForInfraPackage, item)
 }
 func (r *PackageDeploymentReconciler) isPackageDeploymentInfra(pd automationv1alpha1.PackageDeployment) bool {
 

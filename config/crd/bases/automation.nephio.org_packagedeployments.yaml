@@ -88,6 +88,10 @@ spec:
                 - repository
                 - revision
                 type: object
+              provider:
+                type: string
+              provisionMethod:
+                type: string
               selector:
                 description: Label selector for Clusters on which to deploy the package
                 properties:
@@ -134,9 +138,6 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
             required:
-            - controlPlaneMachineCount
-            - kubernetesMachineCount
-            - kubernetesVersion
             - packageRef
             type: object
           status:

@@ -37,6 +37,30 @@ spec:
       #         # Specify the key associated with the value
       #         key: special.how
 ---
+kind: Service 
+apiVersion: v1 
+metadata:
+  name: provider-api-service
+spec:
+  # Expose the service on a static port on each node
+  # so that we can access the service from outside the cluster 
+  type: NodePort
+
+  # When the node receives a request on the static port (30163)
+  # "select pods with the label 'app' set to 'echo-hostname'"
+  # and forward the request to one of them
+  selector:
+    name: provider-api-service-controller
+
+  ports:
+    # Three types of ports for a service
+    # nodePort - a static port assigned on each the node
+    # port - port exposed internally in the cluster
+    # targetPort - the container port to send requests to
+    - nodePort: 30163
+      port: 3333 
+      targetPort: 3333
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:

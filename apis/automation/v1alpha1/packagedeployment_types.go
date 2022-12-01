@@ -71,13 +71,15 @@ type PackageDeploymentSpec struct {
 	Labels map[string]string `json:"labels,omitempty"`
 
 	// Kubernetes Version
-	KubernetesVersion string `json:"kubernetesVersion"`
+	KubernetesVersion string `json:"kubernetesVersion,omitempty"`
 
 	// Control Plane Machine Count
-	ControlPlaneMachineCount string `json:"controlPlaneMachineCount"`
+	ControlPlaneMachineCount string `json:"controlPlaneMachineCount,omitempty"`
 
 	// Kubernetes Machine Count
-	KubernetesMachineCount string `json:"kubernetesMachineCount"`
+	KubernetesMachineCount string `json:"kubernetesMachineCount,omitempty"`
+	Provider               string `json:"provider,omitempty"`
+	ProvisionMethod        string `json:"provisionMethod,omitempty"`
 }
 
 // PackageDeploymentStatus defines the observed state of PackageDeployment

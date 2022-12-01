@@ -9,4 +9,4 @@ metadata:
     nephio.org/site-type: aggregation
     nephio.org/site: edge-01
 repositoryRef:
-  name: test-deploy-edge-01
+  repository: test-deploy-edge-01
