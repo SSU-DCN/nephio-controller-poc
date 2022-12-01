@@ -124,8 +124,8 @@ type InfraRecordList struct {
 	Items []InfraRecord
 }
 
-const InfraControllerUrlForClusterPackage string = "http://127.0.0.1:3333/updateClusterPackage"
-const InfraControllerUrlForInfraPackage string = "http://127.0.0.1:3333/updateInfraPackage"
+const InfraControllerUrlForClusterPackage string = "http://127.0.0.1:3334/updateClusterPackage"
+const InfraControllerUrlForInfraPackage string = "http://127.0.0.1:3334/updateInfraPackage"
 
 // ===========================VARIABLES======================
 // Store digested Cluster Package Deployment (after Reconcile)
