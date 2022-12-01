@@ -21,7 +21,10 @@ const serverPort string = ":3333"
 const kubectlCmd string = "kubectl"
 const clusterctlCmd string = "clusterctl"
 
-type KubeConfigMessage struct {
+type KubeConfigList struct {
+	Items []KubeConfig
+}
+type KubeConfig struct {
 	Name       string `json:"Name"`
 	KubeConfig string `json:"KubeConfig"`
 }
@@ -67,6 +70,10 @@ type InfraRecord struct {
 type InfraRecordList struct {
 	Items []InfraRecord
 }
+
+var kubeConfigList KubeConfigList
+var currentClusterDeploymentPackages, backupClusterDeploymentPackages ClusterRecordList
+var currentInfraDeploymentPackages, backupInfraDeploymentPackages InfraRecordList
 
 func main() {
 	// currentListCluster := list.newList()
@@ -166,7 +173,7 @@ func main() {
 			log.Fatal(err)
 			return
 		}
-		var kubeConfigRaw = KubeConfigMessage{Name: clusterName, KubeConfig: string(stdout)}
+		var kubeConfigRaw = KubeConfig{Name: clusterName, KubeConfig: string(stdout)}
 		jsongetClusterResult, errorConvertJson := json.Marshal(kubeConfigRaw)
 		if errorConvertJson != nil {
 			fmt.Println("error when convert JSON", jsongetClusterResult, errorConvertJson)
@@ -283,4 +290,28 @@ func main() {
 	})
 
 	http.ListenAndServe(serverPort, r)
+}
+
+func isExistingInClusterList(list *ClusterRecordList, item *ClusterRecord) bool {
+	if len((*list).Items) < 1 {
+		return false
+	}
+	for _, iter := range (*list).Items {
+		if iter.Name == item.Name {
+			return true
+		}
+	}
+	return false
+}
+
+func isExistingInInfraList(list *ClusterRecordList, item *ClusterRecord) bool {
+	if len((*list).Items) < 1 {
+		return false
+	}
+	for _, iter := range (*list).Items {
+		if iter.Name == item.Name {
+			return true
+		}
+	}
+	return false
 }
