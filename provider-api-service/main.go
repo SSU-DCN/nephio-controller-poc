@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"time"
 
 	// "container/list"
 	"encoding/json"
@@ -36,6 +37,20 @@ type ClusterConfigurations struct {
 	KubernetesVersion        string `json:"KubernetesVersion"`
 	ControlPlaneMachineCount string `json:"ControlPlaneMachineCount"`
 	KubernetesMachineCount   string `json:"KubernetesMachineCount"`
+}
+type ClusterRecord struct {
+	Name                     string            `json:"name,omitempty"`
+	InfraType                string            `json:"infraType,omitempty"`
+	Labels                   map[string]string `json:"labels,omitempty"`
+	Repository               string            `json:"repository,omitempty"`
+	Provider                 string            `json:"provider,omitempty"`
+	ProvisionMethod          string            `json:"provisionMethod,omitempty"`
+	Namespace                string            `json:"namespace,omitempty"`
+	KubernetesVersion        string            `json:"pubernetesVersion,omitempty"`
+	ControlPlaneMachineCount string            `json:"controlPlaneMachineCount,omitempty"`
+	KubernetesMachineCount   string            `json:"kubernetesMachineCount,omitempty"`
+	CreatedTime              time.Time         `json:"createdTime,omitempty"`
+	UpdatedTime              time.Time         `json:"updatedTime,omitempty"`
 }
 
 func main() {
@@ -156,7 +171,7 @@ func main() {
 			fmt.Println(err)
 		}
 		fmt.Println(string(httpPostBody))
-		var clusterConfig ClusterConfigurations
+		var clusterConfig ClusterRecord
 		err = json.Unmarshal(httpPostBody, &clusterConfig)
 
 		if err != nil {

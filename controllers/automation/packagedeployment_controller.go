@@ -916,7 +916,7 @@ func (r *PackageDeploymentReconciler) appendtoClusterList(list *ClusterRecordLis
 	item.Labels = pd.GetLabels()
 	// item.Namespace = *pd.Spec.Namespace
 
-	r.l.Info("appendtoClusterList function", "ClusterRecord", item, "automationv1alpha1.PackageDeployment", pd)
+	// r.l.Info("appendtoClusterList function", "ClusterRecord", item, "automationv1alpha1.PackageDeployment", pd)
 	(*list).Items = append((*list).Items, item)
 	go sendUpdateClusterDeploymentPackage(InfraControllerUrlForClusterPackage, item)
 }
@@ -958,7 +958,7 @@ func (r *PackageDeploymentReconciler) appendtoInfraList(list *InfraRecordList, p
 	item.ProvisionMethod = pd.Spec.ProvisionMethod //item.Labels["provisionMethod"]
 	// Append to List
 	(*list).Items = append((*list).Items, item)
-	r.l.Info("appendtoInfraList function", "ClusterRecord", item, "automationv1alpha1.PackageDeployment", pd)
+	// r.l.Info("appendtoInfraList function", "ClusterRecord", item, "automationv1alpha1.PackageDeployment", pd)
 	go sendUpdateInfraDeploymentPackage(InfraControllerUrlForInfraPackage, item)
 }
 func (r *PackageDeploymentReconciler) isPackageDeploymentInfra(pd automationv1alpha1.PackageDeployment) bool {
