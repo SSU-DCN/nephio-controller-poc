@@ -266,7 +266,7 @@ func main() {
 		// clusterConfigs.UpdatedTime = clusterConfigs.CreatedTime
 		fmt.Println("Print Cluster Configurations", clusterConfigs)
 		// Add to List if not exist
-		if isExistingInClusterConfigList(&currentClusterConfigList, &clusterConfigs) {
+		if !isExistingInClusterConfigList(&currentClusterConfigList, &clusterConfigs) {
 			currentClusterConfigList.Items = append(currentClusterConfigList.Items, clusterConfigs)
 			config := mappingValueofClusterToClusterRecord(clusterConfigs, currentInfraDeploymentPackagesList)
 			go sendRequestCreateNewCluster(config)
@@ -304,7 +304,7 @@ func main() {
 		var infraDeployment InfraRecord
 		err = json.Unmarshal(httpPostBody, &infraDeployment)
 		fmt.Println("Print infraDeployment", infraDeployment)
-		if isExistingInInfraList(&currentInfraDeploymentPackagesList, &infraDeployment) {
+		if !isExistingInInfraList(&currentInfraDeploymentPackagesList, &infraDeployment) {
 			currentInfraDeploymentPackagesList.Items = append(currentInfraDeploymentPackagesList.Items, infraDeployment)
 		} else {
 			// Replace
