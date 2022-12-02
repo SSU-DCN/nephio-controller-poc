@@ -5,12 +5,14 @@ import (
 	"io/ioutil"
 	"time"
 
+	// work "github.com/gocraft/work"
 	// "container/list"
 	"encoding/json"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -21,6 +23,8 @@ import (
 const serverPort string = ":3333"
 const kubectlCmd string = "kubectl"
 const clusterctlCmd string = "clusterctl"
+
+var kubeConfig string
 
 type KubeConfigMessage struct {
 	Name       string `json:"Name"`
@@ -53,20 +57,25 @@ type ClusterRecord struct {
 	UpdatedTime              time.Time         `json:"updatedTime,omitempty"`
 }
 
+var listYamlFileClusterAPI []string
+
 func main() {
 	// currentListCluster := list.newList()
+	kubeConfig = getEnv("KUBECONFIG", "$HOME/.kube/config")
+	fmt.Println("Env KUBECONFIG", kubeConfig)
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	fmt.Println("KubeConfig file path" + os.Getenv("KUBECONFIG"))
+	// fmt.Println("KubeConfig file path" + os.Getenv("KUBECONFIG"))
 	r.Get("/getcluster", func(w http.ResponseWriter, r *http.Request) {
-
+		fmt.Println("Received Get Cluster Request")
 		prg := "kubectl"
 		arg1 := "get"
 		arg2 := "cluster"
 		arg3 := "-A"
-		cmd := exec.Command(prg, arg1, arg2, arg3)
+		argKubeConfig := "--kubeconfig"
+		cmd := exec.Command(prg, arg1, arg2, arg3, argKubeConfig, kubeConfig)
 		stdout, err := cmd.Output()
 
 		if err != nil {
@@ -102,7 +111,8 @@ func main() {
 		arg1 := "get"
 		arg2 := "kubeadmcontrolplane"
 		arg3 := "-A"
-		cmd := exec.Command(prg, arg1, arg2, arg3)
+		argKubeConfig := "--kubeconfig"
+		cmd := exec.Command(prg, arg1, arg2, arg3, argKubeConfig, kubeConfig)
 		// Get the result from kubectl and send to Infra Controller
 		stdout, err := cmd.Output()
 
@@ -142,6 +152,7 @@ func main() {
 		prg := "clusterctl"
 		arg1 := "get"
 		arg2 := "kubeconfig"
+		// argKubeConfig := "--kubeconfig " + kubeConfig
 		cmd := exec.Command(prg, arg1, arg2, clusterName)
 		// Get the result from kubectl and send to Infra Controller
 		stdout, err := cmd.Output()
@@ -178,6 +189,22 @@ func main() {
 			fmt.Println(err)
 		}
 		fmt.Println((clusterConfig))
+		clusterYamlFile, ok := generateClusterYamlFile(clusterConfig)
+		if ok {
+			prg := "kubectl"
+			arg1 := "apply -f"
+			argKubeConfig := "--kubeconfig " + kubeConfig
+			cmd := exec.Command(prg, arg1, clusterYamlFile, argKubeConfig)
+			// Get the result from kubectl and send to Infra Controller
+			stdout1, err := cmd.Output()
+
+			if err != nil {
+				fmt.Println(err.Error())
+				log.Fatal(err)
+			}
+			fmt.Println("Output kubectl apply -f ", string(stdout1))
+			listYamlFileClusterAPI = append(listYamlFileClusterAPI, clusterYamlFile)
+		}
 
 		// prg := "echo " + httpPostBody
 		// arg := " | kubectl apply -f -"
@@ -189,7 +216,7 @@ func main() {
 		// 	log.Fatal(err)
 		// 	return
 		// }
-		w.Write([]byte(string("stdout")))
+		w.Write([]byte(string("Creating cluster: ") + clusterConfig.Name))
 	})
 
 	r.Post("/generateNewCluster", func(w http.ResponseWriter, r *http.Request) {
@@ -208,6 +235,50 @@ func main() {
 		}
 		w.Write([]byte(string(stdout)))
 	})
-
+	fmt.Println("Start Server at port", serverPort)
 	http.ListenAndServe(serverPort, r)
+}
+
+// ==============================FUNCTIONS============================
+func getEnv(key string, defaultValue string) string {
+	fmt.Println("Get Env KUBECONFIG", os.Getenv("KUBECONFIG"))
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+
+	return defaultValue
+}
+
+func createTempFolder(nameCluster string) string {
+	dname, err := os.MkdirTemp("", nameCluster)
+	if err != nil {
+		panic(err)
+	}
+	return dname
+}
+func generateClusterYamlFile(record ClusterRecord) (string, bool) {
+
+	arg := "clusterctl generate cluster"
+	// clusterctl generate cluster capi-quickstart   --kubernetes-version v1.23.5   --control-plane-machine-count=3   --worker-machine-count=3   > capi-quickstart.yaml
+	argK8sVersion := "--kubernetes-version v1.23.5"
+	argControlPlaneMachineCount := "--control-plane-machine-count=" + record.ControlPlaneMachineCount
+	argWorkerMachineCount := "--worker-machine-count=" + record.KubernetesMachineCount
+	cmd := exec.Command(arg, record.Name, argK8sVersion, argControlPlaneMachineCount, argWorkerMachineCount)
+	stdout, err := cmd.Output()
+	if err != nil {
+		fmt.Println(err.Error())
+		log.Fatal(err)
+		return string(stdout), false
+	}
+	// Create folder
+	tempFolder := createTempFolder(record.Name)
+	templateClusterFile := filepath.Join(tempFolder, record.Name)
+	err = os.WriteFile(templateClusterFile, stdout, 0777)
+	if err != nil {
+		fmt.Println(err.Error())
+		log.Fatal(err)
+		return "error", false
+	}
+
+	return templateClusterFile, true
 }

@@ -22,7 +22,11 @@ import (
 const serverPort string = ":3334"
 const kubectlCmd string = "kubectl"
 const clusterctlCmd string = "clusterctl"
-const providerApiServiceUrl string = "http://127.0.0.1:3333/createNewCluster"
+
+var providerApiServiceUrl string
+
+// "http://127.0.0.1:3333/createNewCluster"
+const CreateNewClusterEndpoint string = "/createNewCluster"
 
 type KubeConfigList struct {
 	Items []KubeConfig
@@ -90,6 +94,7 @@ var currentClusterConfigList, backupClusterConfigsList ClusterConfigurationsList
 
 func main() {
 	// currentListCluster := list.newList()
+	providerApiServiceUrl := getEnv("PROVIDER_API_SERVICE_URL", "http://127.0.0.1:3333")
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
@@ -247,7 +252,7 @@ func main() {
 		config := ClusterRecord{
 			"default", "minimal", map[string]string{"none": "none"}, "default", "default", "default", "default", "v1.24.0", "1", "1", time.Now(), time.Now(),
 		}
-		go sendRequestCreateNewCluster(config)
+		go sendRequestCreateNewCluster(config, providerApiServiceUrl)
 		w.Write([]byte(string("received")))
 	})
 	r.Post("/updateClusterPackage", func(w http.ResponseWriter, r *http.Request) {
@@ -269,7 +274,7 @@ func main() {
 		if !isExistingInClusterConfigList(&currentClusterConfigList, &clusterConfigs) {
 			currentClusterConfigList.Items = append(currentClusterConfigList.Items, clusterConfigs)
 			config := mappingValueofClusterToClusterRecord(clusterConfigs, currentInfraDeploymentPackagesList)
-			go sendRequestCreateNewCluster(config)
+			go sendRequestCreateNewCluster(config, providerApiServiceUrl)
 		} else {
 			replaceExistingClusterConfiguration(&currentClusterConfigList, clusterConfigs)
 		}
@@ -494,13 +499,13 @@ func mappingValueofClusterToClusterRecord(newCluster ClusterConfigurations, list
 	// (*listClusterRecord).Items = append((*&listClusterRecord).Items, newClusterRecord)
 }
 
-func sendRequestCreateNewCluster(config ClusterRecord) bool {
+func sendRequestCreateNewCluster(config ClusterRecord, url string) bool {
 	// Send request
 	jsonBytesData, error := json.Marshal(config)
 	if error != nil {
 		return false
 	}
-	request, error := http.NewRequest("POST", providerApiServiceUrl, bytes.NewBuffer(jsonBytesData))
+	request, error := http.NewRequest("POST", url+CreateNewClusterEndpoint, bytes.NewBuffer(jsonBytesData))
 	request.Header.Set("Content-Type", "application/json; charset=UTF-8")
 	client := &http.Client{}
 	response, error := client.Do(request)
@@ -511,4 +516,11 @@ func sendRequestCreateNewCluster(config ClusterRecord) bool {
 	fmt.Println("Sent Cluster package. response Status:", response.Status)
 
 	return true
+}
+func getEnv(key string, defaultValue string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+
+	return defaultValue
 }

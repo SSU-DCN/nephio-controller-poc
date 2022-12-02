@@ -21,5 +21,6 @@ RUN go mod download
 
 # Copy the go source
 COPY main.go main.go
+ENV KUBECONFIG /kubeconfig/config
 ENTRYPOINT  ["/bin/bash","-c", "make run"]
 #WORKDIR $G

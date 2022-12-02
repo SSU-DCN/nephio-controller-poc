@@ -23,5 +23,5 @@ FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --from=builder /workspace/manager .
 USER 65532:65532
-
+ENV PROVIDER_API_SERVICE_URL "http://127.0.0.1:3333"
 ENTRYPOINT ["/manager"]
