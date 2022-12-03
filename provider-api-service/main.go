@@ -175,7 +175,7 @@ func main() {
 	r.Post("/createNewCluster", func(w http.ResponseWriter, r *http.Request) {
 
 		// defer r.Body.Close()
-
+		fmt.Println("Received create new Cluster Request")
 		httpPostBody, err := ioutil.ReadAll(r.Body) //<--- here!
 
 		if err != nil {
@@ -189,6 +189,7 @@ func main() {
 			fmt.Println(err)
 		}
 		fmt.Println((clusterConfig))
+		fmt.Println("Before Applying cluster YAML FIle")
 		clusterYamlFile, ok := generateClusterYamlFile(clusterConfig)
 		if ok {
 			prg := "kubectl"
@@ -257,14 +258,17 @@ func createTempFolder(nameCluster string) string {
 	return dname
 }
 func generateClusterYamlFile(record ClusterRecord) (string, bool) {
-
-	arg := "clusterctl generate cluster"
+	fmt.Println("Generate Cluster Yaml File", record.Name)
+	arg := "clusterctl"
+	arg1 := "generate"
+	arg2 := "cluster"
 	// clusterctl generate cluster capi-quickstart   --kubernetes-version v1.23.5   --control-plane-machine-count=3   --worker-machine-count=3   > capi-quickstart.yaml
 	argK8sVersion := "--kubernetes-version v1.23.5"
 	argControlPlaneMachineCount := "--control-plane-machine-count=" + record.ControlPlaneMachineCount
 	argWorkerMachineCount := "--worker-machine-count=" + record.KubernetesMachineCount
-	cmd := exec.Command(arg, record.Name, argK8sVersion, argControlPlaneMachineCount, argWorkerMachineCount)
+	cmd := exec.Command(arg, arg1, arg2, record.Name, argK8sVersion, argControlPlaneMachineCount, argWorkerMachineCount)
 	stdout, err := cmd.Output()
+	fmt.Println("stdout", string(stdout))
 	if err != nil {
 		fmt.Println(err.Error())
 		log.Fatal(err)

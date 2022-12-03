@@ -18,8 +18,12 @@ spec:
         image: busybox:stable
         imagePullPolicy: IfNotPresent 
         command: ['sh', '-c', 'sleep 500']
-        # ports:
-          # - containerPort: 3333
+        env:
+          - name: KUBECONFIG
+            value: /kubeconfig/config
+        ports:
+          - containerPort: 3333
+            name: pvd-svc-port
         volumeMounts:
         - name: kubeconfig
           mountPath: /kubeconfig
@@ -40,7 +44,9 @@ spec:
 kind: Service 
 apiVersion: v1 
 metadata:
-  name: provider-api-service
+  name: provider-api-svc
+  # PROVIDER_API_SVC_SERVICE_HOST
+  # PROVIDER_API_SVC_SERVICE_HOST
 spec:
   # Expose the service on a static port on each node
   # so that we can access the service from outside the cluster 
@@ -57,15 +63,14 @@ spec:
     # nodePort - a static port assigned on each the node
     # port - port exposed internally in the cluster
     # targetPort - the container port to send requests to
-    - nodePort: 30163
+    - name: pvdapi-svc
       port: 3333 
-      targetPort: 3333
+      targetPort: pvd-svc-port
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: clusterapi-management-kubeconfig
-  namespace: default
 data:
   config: |
     apiVersion: v1
