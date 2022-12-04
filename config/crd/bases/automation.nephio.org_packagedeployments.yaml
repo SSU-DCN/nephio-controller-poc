@@ -84,9 +84,7 @@ spec:
                       of the package
                     type: string
                 required:
-                - packageName
                 - repository
-                - revision
                 type: object
               provider:
                 type: string
