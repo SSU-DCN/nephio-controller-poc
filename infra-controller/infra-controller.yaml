@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: Deployment 
 metadata:
   name: infra-controller
+  namespace: nephio-system
 spec:
   replicas: 1
   selector:
@@ -29,6 +30,7 @@ kind: Service
 apiVersion: v1 
 metadata:
   name: infra-controller-service
+  namespace: nephio-system
 spec:
   # Expose the service on a static port on each node
   # so that we can access the service from outside the cluster 
