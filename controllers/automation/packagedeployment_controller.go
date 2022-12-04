@@ -18,7 +18,6 @@ package automation
 
 import (
 	"bytes"
-	"container/list"
 	"context"
 
 	jsonOrg "encoding/json"
@@ -148,7 +147,6 @@ const InfraControllerUrlForInfraPackage string = "http://127.0.0.1:3334/updateIn
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *PackageDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	currentListCluster := list.New()
 	pd, err := r.startRequest(ctx, req)
 	if err != nil {
 		if client.IgnoreNotFound(err) != nil {
@@ -158,11 +156,6 @@ func (r *PackageDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		r.l.Info("cannot get resource, probably deleted", "error", err.Error())
 		r.l.Error(err, "Error when start Request Reconcile function", "error")
 		return ctrl.Result{}, nil
-	} else {
-		currentListCluster.PushBack(pd)
-		r.l.Info("Push Back pd. Lenght of list is", "pd", pd.Spec.Labels) //Selector.MatchLabels(map[string]string{"Type": "Infra"}))
-		r.l.Info("Print currentListCluster.PushBack(pd)", "pd", pd)
-
 	}
 
 	// Find the clusters matching the selector
@@ -262,10 +255,10 @@ func (r *PackageDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	// Add code in here to detect the new cluster and new deployment
-	if currentListCluster.Len() > 0 {
-		r.l.Info("Check the current list cluster with Cluster API")
+	// if currentListCluster.Len() > 0 {
+	// 	r.l.Info("Check the current list cluster with Cluster API")
 
-	}
+	// }
 	// After detect, send request to create cluster and apply new cluster
 
 	return ctrl.Result{}, nil
@@ -486,28 +479,27 @@ func (r *PackageDeploymentReconciler) startRequest(ctx context.Context, req ctrl
 	if err := r.Get(ctx, req.NamespacedName, &pd); err != nil {
 		r.l.Error(err, "unable to fetch PackageDeployment")
 		return nil, client.IgnoreNotFound(err)
-	}
+	} else {
+		// Check is PAckage Deployment is Cluster Package
 
-	// Check is PAckage Deployment is Cluster Package
-
-	if r.isPackageDeploymentCluster(pd) {
-		// Package is Deployment Cluster
-		if !(r.isExistingClusterList(r.CurrentClusterDeploymentPackages, pd)) {
-			r.appendtoClusterList(r.CurrentClusterDeploymentPackages, pd)
+		if r.isPackageDeploymentCluster(pd) {
+			// Package is Deployment Cluster
+			if !(r.isExistingClusterList(r.CurrentClusterDeploymentPackages, pd)) {
+				r.appendtoClusterList(r.CurrentClusterDeploymentPackages, pd)
+			}
+			// CurrentClusterDeploymentPackages
 		}
-		// CurrentClusterDeploymentPackages
 
-	}
-
-	// Check is Package Deployment is Infra Package
-	if r.isPackageDeploymentInfra(pd) {
-		// r.l.Info("Print inside isPackageDeploymentInfra function", "pd", pd)
-		if !(r.isExistingInfraList(r.CurrentInfraDeploymentPackages, pd)) {
-			r.appendtoInfraList(r.CurrentInfraDeploymentPackages, pd)
+		// Check is Package Deployment is Infra Package
+		if r.isPackageDeploymentInfra(pd) {
+			// r.l.Info("Print inside isPackageDeploymentInfra function", "pd", pd)
+			if !(r.isExistingInfraList(r.CurrentInfraDeploymentPackages, pd)) {
+				r.appendtoInfraList(r.CurrentInfraDeploymentPackages, pd)
+			}
 		}
+		//
 	}
 
-	//
 	r.s = json.NewSerializerWithOptions(json.DefaultMetaFactory, nil, nil, json.SerializerOptions{Yaml: true})
 
 	return &pd, nil

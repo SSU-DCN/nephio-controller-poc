@@ -1,0 +1,13 @@
+apiVersion: automation.nephio.org/v1alpha1
+kind: PackageDeployment
+metadata:
+  name: nephio-edge-11
+  labels:
+    type: Cluster
+    infraType: openstack-small-edge-cluster1
+    nephio.org/region: us-central1
+    nephio.org/site-type: aggregation
+    nephio.org/site: edge-01
+spec:
+  packageRef:
+    repository: test-deploy-edge-01
