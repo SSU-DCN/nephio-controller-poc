@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: provider-api-service-deployment
-        image: busybox:stable
+        image: ntnguyencse/provider-api-service:v0.4
         imagePullPolicy: IfNotPresent 
         command: ['sh', '-c', 'sleep 500']
         env:
