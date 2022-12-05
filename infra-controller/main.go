@@ -94,7 +94,7 @@ var currentClusterConfigList, backupClusterConfigsList ClusterConfigurationsList
 
 func main() {
 	// currentListCluster := list.newList()
-	providerApiServiceUrl := "http://provider-api-service:3333"
+	providerApiServiceUrl := "http://provider-api-svc:3333"
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
