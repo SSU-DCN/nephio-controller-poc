@@ -8,3 +8,9 @@ all:
 .PHONY: run
 run:
 	go run .
+.PHONY: image
+image:
+	docker build . -t ntnguyencse/infra-controller:lastest
+.PHONY: push-image
+image:
+	docker push ntnguyencse/infra-controller:lastest

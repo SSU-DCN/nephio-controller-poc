@@ -94,13 +94,17 @@ var currentClusterConfigList, backupClusterConfigsList ClusterConfigurationsList
 
 func main() {
 	// currentListCluster := list.newList()
-	providerApiServiceUrl := "http://" + getEnv("PROVIDER_API_SVC_SERVICE_HOST", "127.0.0.1") + ":" + serverPort
+	providerApiServiceUrl := "http://provider-api-service:3333"
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	fmt.Println("KubeConfig file path" + os.Getenv("KUBECONFIG"))
 	fmt.Println("Print PROVIDER_API_SVC_SERVICE_HOST: ", providerApiServiceUrl)
+
+	r.Get("/test", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(string("Received Request Infra COntroller")))
+	})
 	r.Get("/getcluster", func(w http.ResponseWriter, r *http.Request) {
 
 		prg := "kubectl"

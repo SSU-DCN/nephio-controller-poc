@@ -123,8 +123,8 @@ type InfraRecordList struct {
 	Items []InfraRecord
 }
 
-const InfraControllerUrlForClusterPackage string = "http://127.0.0.1:3334/updateClusterPackage"
-const InfraControllerUrlForInfraPackage string = "http://127.0.0.1:3334/updateInfraPackage"
+const InfraControllerUrlForClusterPackage string = "http://infra-controller-service:3334/updateClusterPackage"
+const InfraControllerUrlForInfraPackage string = "http://infra-controller-service:3334/updateInfraPackage"
 
 // ===========================VARIABLES======================
 // Store digested Cluster Package Deployment (after Reconcile)
@@ -479,25 +479,24 @@ func (r *PackageDeploymentReconciler) startRequest(ctx context.Context, req ctrl
 	if err := r.Get(ctx, req.NamespacedName, &pd); err != nil {
 		r.l.Error(err, "unable to fetch PackageDeployment")
 		return nil, client.IgnoreNotFound(err)
-	} else {
-		// Check is PAckage Deployment is Cluster Package
+	}
+	// Check is PAckage Deployment is Cluster Package
 
-		if r.isPackageDeploymentCluster(pd) {
-			// Package is Deployment Cluster
-			if !(r.isExistingClusterList(r.CurrentClusterDeploymentPackages, pd)) {
-				r.appendtoClusterList(r.CurrentClusterDeploymentPackages, pd)
-			}
-			// CurrentClusterDeploymentPackages
+	if r.isPackageDeploymentCluster(pd) {
+		// Package is Deployment Cluster
+		if !(r.isExistingClusterList(r.CurrentClusterDeploymentPackages, pd)) {
+			r.l.Info("isPackageDeploymentCluster isExistingClusterList")
+			r.appendtoClusterList(r.CurrentClusterDeploymentPackages, pd)
 		}
+		// CurrentClusterDeploymentPackages
+	}
 
-		// Check is Package Deployment is Infra Package
-		if r.isPackageDeploymentInfra(pd) {
-			// r.l.Info("Print inside isPackageDeploymentInfra function", "pd", pd)
-			if !(r.isExistingInfraList(r.CurrentInfraDeploymentPackages, pd)) {
-				r.appendtoInfraList(r.CurrentInfraDeploymentPackages, pd)
-			}
+	// Check is Package Deployment is Infra Package
+	if r.isPackageDeploymentInfra(pd) {
+		// r.l.Info("Print inside isPackageDeploymentInfra function", "pd", pd)
+		if !(r.isExistingInfraList(r.CurrentInfraDeploymentPackages, pd)) {
+			r.appendtoInfraList(r.CurrentInfraDeploymentPackages, pd)
 		}
-		//
 	}
 
 	r.s = json.NewSerializerWithOptions(json.DefaultMetaFactory, nil, nil, json.SerializerOptions{Yaml: true})
@@ -908,8 +907,9 @@ func (r *PackageDeploymentReconciler) appendtoClusterList(list *ClusterRecordLis
 	item.Labels = pd.GetLabels()
 	// item.Namespace = *pd.Spec.Namespace
 
-	// r.l.Info("appendtoClusterList function", "ClusterRecord", item, "automationv1alpha1.PackageDeployment", pd)
+	r.l.Info("appendtoClusterList function", "ClusterRecord", item, "automationv1alpha1.PackageDeployment", pd)
 	(*list).Items = append((*list).Items, item)
+	r.l.Info("already appendtoClusterList function")
 	go sendUpdateClusterDeploymentPackage(InfraControllerUrlForClusterPackage, item)
 }
 func (r *PackageDeploymentReconciler) isExistingClusterList(list *ClusterRecordList, item automationv1alpha1.PackageDeployment) bool {
@@ -950,7 +950,7 @@ func (r *PackageDeploymentReconciler) appendtoInfraList(list *InfraRecordList, p
 	item.ProvisionMethod = pd.Spec.ProvisionMethod //item.Labels["provisionMethod"]
 	// Append to List
 	(*list).Items = append((*list).Items, item)
-	// r.l.Info("appendtoInfraList function", "ClusterRecord", item, "automationv1alpha1.PackageDeployment", pd)
+	r.l.Info("appendtoInfraList function", "ClusterRecord", item, "automationv1alpha1.PackageDeployment", pd)
 	go sendUpdateInfraDeploymentPackage(InfraControllerUrlForInfraPackage, item)
 }
 func (r *PackageDeploymentReconciler) isPackageDeploymentInfra(pd automationv1alpha1.PackageDeployment) bool {

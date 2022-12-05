@@ -21,6 +21,7 @@ RUN go mod download
 
 # Copy the go source
 COPY main.go main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o provider main.go
 ENV KUBECONFIG /kubeconfig/config
-ENTRYPOINT  ["/bin/bash","-c", "make run"]
+ENTRYPOINT  ["./provider"]
 #WORKDIR $G

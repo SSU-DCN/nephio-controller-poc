@@ -4,6 +4,8 @@ kind: Deployment
 metadata:
   name: provider-api-service-controller
   namespace: nephio-system
+  labels:
+    app: provider-api-service
 spec:
   replicas: 1
   selector:
@@ -16,9 +18,8 @@ spec:
     spec:
       containers:
       - name: provider-api-service-deployment
-        image: ntnguyencse/provider-api-service:v0.4
-        imagePullPolicy: IfNotPresent 
-        command: ['sh', '-c', 'sleep 500']
+        image: ntnguyencse/provider-api-service:v0.5
+        imagePullPolicy: IfNotPresent
         env:
           - name: KUBECONFIG
             value: /kubeconfig/config
@@ -58,7 +59,7 @@ spec:
   # "select pods with the label 'app' set to 'echo-hostname'"
   # and forward the request to one of them
   selector:
-    name: provider-api-service-controller
+    app: provider-api-service-controller
 
   ports:
     # Three types of ports for a service
@@ -73,6 +74,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: clusterapi-management-kubeconfig
+  namespace: nephio-system
 data:
   config: |
     apiVersion: v1

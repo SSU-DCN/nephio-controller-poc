@@ -68,6 +68,9 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	// fmt.Println("KubeConfig file path" + os.Getenv("KUBECONFIG"))
+	r.Get("/test", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(string("Received Request Provider API COntroller")))
+	})
 	r.Get("/getcluster", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Received Get Cluster Request")
 		prg := "kubectl"

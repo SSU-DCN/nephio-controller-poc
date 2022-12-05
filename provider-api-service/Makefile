@@ -15,3 +15,9 @@ build:
 .PHONY: clean
 clean: 
 	rm *.txt provider
+.PHONY: image
+image:
+	docker build . -t ntnguyencse/provider-api-service:lastest
+.PHONY: push-image
+image:
+	docker push ntnguyencse/provider-api-service:lastest

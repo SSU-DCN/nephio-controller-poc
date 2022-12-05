@@ -4,6 +4,8 @@ kind: Deployment
 metadata:
   name: infra-controller
   namespace: nephio-system
+  labels:
+    app: infra-controller
 spec:
   replicas: 1
   selector:
@@ -16,7 +18,7 @@ spec:
     spec:
       containers:
       - name: infra-controller
-        image: ntnguyencse/infra-controller:v0.2
+        image: ntnguyencse/infra-controller:v0.5
         imagePullPolicy: IfNotPresent 
         # command: ['sh', '-c', 'sleep 500']
         env:
@@ -40,7 +42,7 @@ spec:
   # "select pods with the label 'app' set to 'echo-hostname'"
   # and forward the request to one of them
   selector:
-    name: infra-controller
+    app: infra-controller
 
   ports:
     - name: infra-controller-port
