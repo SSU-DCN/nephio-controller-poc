@@ -18,11 +18,47 @@ spec:
     spec:
       containers:
       - name: provider-api-service-deployment
-        image: ntnguyencse/provider-api-service:v0.5
+        image: ntnguyencse/provider-api-service:v0.9
         imagePullPolicy: IfNotPresent
         env:
           - name: KUBECONFIG
             value: /kubeconfig/config
+          - name: OPENSTACK_FAILURE_DOMAIN
+            valueFrom:
+              configMapKeyRef:
+                name: openstack-env
+                key: openstack-failure-domain 
+          - name: OPENSTACK_IMAGE_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: openstack-env
+                key: openstack-image-name 
+          - name: OPENSTACK_EXTERNAL_NETWORK_ID
+            valueFrom:
+              configMapKeyRef:
+                name: openstack-env
+                key: openstack-external-network-id 
+          - name: OPENSTACK_NODE_MACHINE_FLAVOR
+            valueFrom:
+              configMapKeyRef:
+                name: openstack-env
+                key: openstack-node-machine-flavor 
+          - name: OPENSTACK_DNS_NAMESERVERS
+            valueFrom:
+              configMapKeyRef:
+                name: openstack-env
+                key: openstack-dns-nameservers 
+          - name: OPENSTACK_CONTROL_PLANE_MACHINE_FLAVOR
+            valueFrom:
+              configMapKeyRef:
+                name: openstack-env
+                key: openstack-control-plane-machine-flavor
+          - name: OPENSTACK_SSH_KEY_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: openstack-env
+                key: openstack-ssh-key-name 
+            
         ports:
           - containerPort: 3333
             name: pvd-svc-port
@@ -73,6 +109,21 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  name: openstack-env
+  namespace: nephio-system
+data:
+  # property-like keys; each key maps to a simple value
+  openstack-failure-domain : "compute"
+  openstack-image-name: "ubuntu-k8s-1.24"
+  openstack-external-network-id: "faa68d67-0441-4749-895b-95ac49f85d86"
+  openstack-control-plane-machine-flavor: "cluster.controller"
+  openstack-dns-nameservers: "8.8.8.8"
+  openstack-node-machine-flavor: "cluster.compute"
+  openstack-ssh-key-name: "clusterapi"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
   name: clusterapi-management-kubeconfig
   namespace: nephio-system
 data:
@@ -80,19 +131,19 @@ data:
     apiVersion: v1
     clusters:
     - cluster:
-    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUMvakNDQWVhZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRJeU1EY3lNVEEzTURBeU5Gb1hEVE15TURjeE9EQTNNREF5TkZvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBS2xJClBMN1ZuVVJsSHArQThkNnlObGJWKzZkOVp0QXFGWmhZVGRMVHZCUEVOaGlTTkNReXpkbDBYcW5HTndFdWxGTHMKN3gxUFlUdTJwTElDOFd6NVdSZEpyOWFSZWtwVHVQeWQxczh3VThrR2RtOVZqNlVuV3hMK0RBQWtSVk5MaFlwaQpYQVk4TFhQNjNGOHZxUm4xbG9tZVdKOUs2VEJsQ0I3eng5bXBPbWc2RzlVUGtMVHdaTXpSdU90a3FsZzI3ZlJvCkk2TlpieWRjZ0ticytuVmlUUDVzSnA4WTNmYjRhYytnMmxvSnNlMGlLbVpXMnl5aEsyRU1iTWhVc1Fxak9yWS8KZU42dnQwUnE4bHJ2VjkvVEQxdUoyS2twTy9FRFM2SUE4VmZMaldLeFB3ZC9uSkNkS0ZtLzFCSDJRa1dReVpKTApWSE16RUZyOUs3KzZzY1ZYODVNQ0F3RUFBYU5aTUZjd0RnWURWUjBQQVFIL0JBUURBZ0trTUE4R0ExVWRFd0VCCi93UUZNQU1CQWY4d0hRWURWUjBPQkJZRUZCcUloNnh2LzNlTlJuN0JqTmRxR2NiWVVSbldNQlVHQTFVZEVRUU8KTUF5Q0NtdDFZbVZ5Ym1WMFpYTXdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBR1hGQk1CbTZDRng1Vit0d2hvcgp3YU1MeUl2b2krVWkxQ2I3KzdaOE5qUmJGNkxmS3I2aXRiaEI5NHRYNyttQ0p2MDM5ZmoyZEZqMEw0N3pKN2Z6CmhscmNLQ2luWUxxZUpsVDRjOVY2ZVY3SHdsTVRCV056eUpEMTVrcHhrZXRkTUlVSHV1NENzR1NBRzkvMlhlNUEKMjQzTXFmZUUxSktvZ0pCczlTdUFMWjhnVGxKNTVlc09aWXJxeHVQQmNqNENjR3hGTkZ5RVl2R2tUMDNqVnJMUAphMW4wUkRYemZEeWsrdGs0MkVucFNFM2IwY3NrWkQzR3hFVmUwem1tZlg5Vzg0V3RNQ1I4d1BaRk9wd04xL08yCjl5cmdBUWNTOTdrWlJSUGZTcVVuWWh0QkFDVG5ubk1rQnJDMGpaZ3M0N1lHSi9MdWJJL2VTYW1Ld1B2TlFoVjMKWm5NPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
-    server: https://192.168.11.182:6443
-    name: kubernetes
+        certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0
+        server: https://dcn:6443
+      name: hyfast
     contexts:
     - context:
-    cluster: kubernetes
-    user: kubernetes-admin
-     name: kubernetes-admin@kubernetes
-    current-context: kubernetes-admin@kubernetes
+        cluster: hyfast
+        user: kubernetes-admin
+      name: kubernetes-admin@hyfast
+    current-context: kubernetes-admin@hyfast
     kind: Config
     preferences: {}
     users:
     - name: kubernetes-admin
       user:
-        client-certificate-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURJVENDQWdtZ0F3SUJBZ0lJY24xRllITXhERU13RFFZSktvWklodmNOQVFFTEJRQXdGVEVUTUJFR0ExVUUKQXhNS2EzVmlaWEp1WlhSbGN6QWVGdzB5TWpBM01qRXdOekF3TWpSYUZ3MHlNekEzTWpFd056QXdNamRhTURReApGekFWQmdOVkJBb1REbk41YzNSbGJUcHRZWE4wWlhKek1Sa3dGd1lEVlFRREV4QnJkV0psY201bGRHVnpMV0ZrCmJXbHVNSUlCSWpBTkJna3Foa2lHOXcwQkFRRUZBQU9DQVE4QU1JSUJDZ0tDQVFFQTFQaFZTbk8vZWpiWnZ2UXAKVS9PUTFmZnFCSmJucDQ2UTlvL1ZnOHBhd3p6MnF1QUtmWXB2SU0zZ0FYcWFyL09RQkppZ1hPU2Vsa0xBaWJSdQpYZlpNT2Z3dkg2cnRNSTdNSUZBNTZNZFdCZHNtZ3Y2UDJLb3hrdTZVTzQ3K3FWcWtHeUFiQUF5WTByRUgwdU1FCnNBVWk2WDE1WlV2eitiWnJZZm04TWNDWVJLaWpwV2JEUmsydzl5aFlFOUZ0K1NROVhGc25qWTdBeGFyVlNiVlMKQlFjRFRGQVV5TDF5T1JGQloza3ZRNFl6elBKcjdmM1QxZDlSUWNLWDRDd1VEa0J5TFFNR0l4YU02cXhOMlRaaQo2UHdRbngrY2FSZTZaWUpwTmp6NHNGc25HN3V0YTRmNXkzQ3ExL3VsV2VUbzJEYTJORjJtWDRDeFFpVHJUb2wxCnp4Vk16UUlEQVFBQm8xWXdWREFPQmdOVkhROEJBZjhFQkFNQ0JhQXdFd1lEVlIwbEJBd3dDZ1lJS3dZQkJRVUgKQXdJd0RBWURWUjBUQVFIL0JBSXdBREFmQmdOVkhTTUVHREFXZ0JRYWlJZXNiLzkzalVaK3dZelhhaG5HMkZFWgoxakFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBbnp0d2ZNUDlZTysvQ2dpeEl5TG1BYlZtU1d4SGZsSStITDFFCkRBck9URk1va01NR1FoaHFPSE5XL1BnYjNHdTN2V20vV3VleUdOOHJSWmRic3lrbjhOMjlzd1hTZXZtb2UvMkkKL3R1UGcyNjFoclhXODlwWC91Y1N3dW1wYlFJYkVpbUpDVDBEc0NCeDBNMytsb1NOeU82U0JDNm1QQW1hWlNqbApkVCt2M29oelo1SW5FZWZDU0dHMlVETEhuQlNDd3J6N3pTYkVSMnREYlIyallIUE1QMmIyc3ZqUjRLS2xHK2xrCkw1RkxLYXUwSnllTUxkd0JzSlU5bS90dEdLWE9QMTlXTDQ5d09uZ29PdzdsTGNmYlA0b0VxRy8ySzdJanVVZisKcENwRHdGelgxbm1ESTExYVVkYkhzVEFaT2phdzlWTHoxYWdYSEtCTU5jOXV2cUk4UWc9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
-        client-key-data: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb3dJQkFBS0NBUUVBMVBoVlNuTy9lamJadnZRcFUvT1ExZmZxQkpibnA0NlE5by9WZzhwYXd6ejJxdUFLCmZZcHZJTTNnQVhxYXIvT1FCSmlnWE9TZWxrTEFpYlJ1WGZaTU9md3ZINnJ0TUk3TUlGQTU2TWRXQmRzbWd2NlAKMktveGt1NlVPNDcrcVZxa0d5QWJBQXlZMHJFSDB1TUVzQVVpNlgxNVpVdnorYlpyWWZtOE1jQ1lSS2lqcFdiRApSazJ3OXloWUU5RnQrU1E5WEZzbmpZN0F4YXJWU2JWU0JRY0RURkFVeUwxeU9SRkJaM2t2UTRZenpQSnI3ZjNUCjFkOVJRY0tYNEN3VURrQnlMUU1HSXhhTTZxeE4yVFppNlB3UW54K2NhUmU2WllKcE5qejRzRnNuRzd1dGE0ZjUKeTNDcTEvdWxXZVRvMkRhMk5GMm1YNEN4UWlUclRvbDF6eFZNelFJREFRQUJBb0lCQUEvazFLQ3cwTHB6TzM3bgp3K25UQkowaldtQ3JUbkNQMER2R2NqM2FyVGxpNUZuT1RKb2Y2YmsrQkJpNEtMRTI4U21XcG1rb1dybUdFODV6Ckc4V0JheURzdEN1ZDJ3UER0SEk0Nm9sM3p2Q3k4VVhYYjY3UXpOQlZZOVNxRUZGZFJXQU0zbGI3bWJBbnJCak4KL255UWRaR05YckR6b1NxaXRaTGpTMnMvSDE0SVFRdGs0U29aOVVNbVRFeVl0cnQrdzd6cmsxSFhweU9FTnRLcAplYUVQMU5wZ2l0ZlUxL1hoSjJWMDV5dHRQL1JpMjk0MWo1RFFVc25lbTNtVHU2TDVEdmZRYnlVWjd0aTJkU2d2Ck8yL1V3WXZST0MwMHR4NWVTYWVBMTRVMmd6aGIyNHVNdEQzZFR2bjkvQXVsaW03SWdmSVJVbWlNa3lQanRkSmwKTkNXL01oVUNnWUVBNW1pb1lJKy9Pd3BOMHh4OWJOL3ZrYmtWQWFjdlRUU3pyd3NiQlBCR0tDaE8wWmRaTVl3TgpYOFpCVjl0TUdVMHFMNDAwMHlna0tNcG52cGtoSllTdHlDWVRKV1BBZzlnWk51U2RuMGJ6VjJaV1ZNY3k5Z1FuCi9Cb2RrcUs1WDZ1Uzd5SGdRVGEzNjdnTEE3VitTWW5uRk9tazdSZ1BnUWdpc0lBU0E2WFBuamNDZ1lFQTdKL1UKU1ltL0E1dFVTeUtDUWEwbDJJS3psS0d6N2t3UTc0MzlEYXNBRnFRNFF1bGpBZUdQUUVoaE5kMk51WHBaTlF2NApZaERSaDB4UFVOQ1ZoUWlFRUdtdStpZzVNc0VyR0VoZjFrTld5KzRPTnBscmh6M1lRTHhRQmJERytJcHVKdzJiCllTUkRxd0tVSkpFQkJqRUEwWktTWXB2cjVGd3grdGNaL1NFV3l4c0NnWUFPSEs3amF5cDlSVDVMQmQyd3cyNTYKOEdrVzl0UncyQitCUXg3ZWlKRGplTVNMRmNnQ3Z0ODYxSHZBRTlCdlpFaUhMUkRsTmZvdy9XU3BTZHU3M29wKwpUY2F5YlkrbkE1OVh1MXprR29aZy9nV2ZuNnZCWWJQSlB4ZzhtUGJkb3phV3F1NS9VQWlueVZmelhEUmw4S3BVCm41TFlhcmJZWWxVdGxrcUVLcTJ5dFFLQmdGbHNJVzdWRnBISFhyaXlSdVdKQ05ka3RYY0RFUnVLTlpCQ2FaS0QKd0JuT1g5Q3hvSS95YlErUEN1V3ZYOExyZ05EeVFDRFhXRWU0Ui9VempuM2k5UDI2NHJ4NC9QeTRVWS93c2Y4bwpIYUlkeWROS2NYOS9tTDBHTFh1cERkaVpmLzFVUUJjYS9GT2hPdGtDejQ5R2I1ZkR1M3gyamxRVG4zTzdYSC96CnhFaG5Bb0dCQU5nRjlWZklabGFDK2hSNHNScHJPNGtLbVdRbDRhNTM3KzBjVlVRcDlDTlVhMDJxeVd5KzFpbloKUGN2NnhvOTZ0bndScys3MmRWY2ZSUEdxYndoeEJIYUJyaTVQbjZrU0hMMzUzOWZKMWxOTEZPeCtEd25CaFdlNwovRFlmQ1E0T1JrM1FlMjJsM0x0RXBxOU50YzlHUm5pMHZEcnhHT1lUUTZZRUxtOFY5U2JJCi0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCg==
+        client-certificate-data: LS0tLS1C
+        client-key-data: LS0tLS1C

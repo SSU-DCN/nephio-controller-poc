@@ -1,0 +1,19 @@
+# declare -x OPENSTACK_DNS_NAMESERVERS="8.8.8.8"
+# declare -x OPENSTACK_FAILURE_DOMAIN="compute"
+# declare -x OPENSTACK_CONTROL_PLANE_MACHINE_FLAVOR="cluster.controller"
+# declare -x OPENSTACK_NODE_MACHINE_FLAVOR="cluster.compute"
+# #declare -x OPENSTACK_IMAGE_NAME="Ubuntu-18.04-190314"
+# declare -x OPENSTACK_IMAGE_NAME="ubuntu-k8s-1.24"
+# declare -x OPENSTACK_SSH_KEY_NAME="clusterapi"
+# declare -x OPENSTACK_EXTERNAL_NETWORK_ID="147a0c31-89e4-412a-859d-7f3cec25bb6f"
+
+declare -x OPENSTACK_DNS_NAMESERVERS="8.8.8.8"
+declare -x OPENSTACK_FAILURE_DOMAIN="compute"
+declare -x OPENSTACK_CONTROL_PLANE_MACHINE_FLAVOR="cluster.controller"
+declare -x OPENSTACK_NODE_MACHINE_FLAVOR="cluster.compute"
+#declare -x OPENSTACK_IMAGE_NAME="Ubuntu-18.04-190314"
+declare -x OPENSTACK_IMAGE_NAME="ubuntu-k8s-1.24"
+declare -x OPENSTACK_SSH_KEY_NAME="clusterapi"
+declare -x OPENSTACK_EXTERNAL_NETWORK_ID="faa68d67-0441-4749-895b-95ac49f85d86"
+
+source env.rc clouds.yaml openstack-cloud

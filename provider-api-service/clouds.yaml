@@ -1,0 +1,20 @@
+  clouds:
+    openstack_helm:
+      region_name: RegionOne
+      identity_api_version: 3
+      auth:
+        username: 'admin'
+        password: '******'
+        project_name: 'admin'
+        project_domain_name: 'default'
+        user_domain_name: 'default'
+        auth_url: 'http://keystone.openstack.svc.cluster.local/v3'
+    openstack-cloud:
+      region_name: RegionOne
+      auth:
+        auth_url: "http://******/identity/v3"
+        project_name: admin
+        username: admin
+        password: "******"
+        user_domain_name: default
+        project_domain_name: default
