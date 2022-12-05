@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: infra-controller
-        image: ntnguyencse/infra-controller:v0.5
+        image: ntnguyencse/infra-controller:v0.6
         imagePullPolicy: IfNotPresent 
         # command: ['sh', '-c', 'sleep 500']
         env:
