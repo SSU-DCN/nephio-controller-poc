@@ -59,7 +59,7 @@ spec:
   # "select pods with the label 'app' set to 'echo-hostname'"
   # and forward the request to one of them
   selector:
-    app: provider-api-service-controller
+    app: provider-api-service
 
   ports:
     # Three types of ports for a service
