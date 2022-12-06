@@ -16,10 +16,12 @@ spec:
       labels:
         app: provider-api-service
     spec:
+      nodeSelector:
+          kubernetes.io/hostname: hyfast-mgmt01
       containers:
       - name: provider-api-service-deployment
-        image: ntnguyencse/provider-api-service:v0.9
-        imagePullPolicy: IfNotPresent
+        image: ntnguyencse/provider-api-service:v1.16
+        imagePullPolicy: Always
         env:
           - name: KUBECONFIG
             value: /kubeconfig/config
@@ -58,7 +60,26 @@ spec:
               configMapKeyRef:
                 name: openstack-env
                 key: openstack-ssh-key-name 
-            
+          - name: OPENSTACK_CLOUD
+            valueFrom:
+              configMapKeyRef:
+                name: openstack-env
+                key: openstack-cloud
+          - name: OPENSTACK_CLOUD_CACERT_B64
+            valueFrom:
+              configMapKeyRef:
+                name: openstack-env
+                key: openstack-cloud-cacert-b64
+          - name: OPENSTACK_CLOUD_PROVIDER_CONF_B64
+            valueFrom:
+              configMapKeyRef:
+                name: openstack-env
+                key: openstack-cloud-provider-conf-b64
+          - name: OPENSTACK_CLOUD_YAML_B64
+            valueFrom:
+              configMapKeyRef:
+                name: openstack-env
+                key: openstack-cloud-yaml-b64
         ports:
           - containerPort: 3333
             name: pvd-svc-port
@@ -120,6 +141,10 @@ data:
   openstack-dns-nameservers: "8.8.8.8"
   openstack-node-machine-flavor: "cluster.compute"
   openstack-ssh-key-name: "clusterapi"
+  openstack-cloud: "openstack-cloud"
+  openstack-cloud-cacert-b64: "Cg=="
+  openstack-cloud-provider-conf-b64: "W0dsb2JhbIK"
+  openstack-cloud-yaml-b64: "Y2xvdWRzOgogIWU6IGRlZmF1bHQK"
 ---
 apiVersion: v1
 kind: ConfigMap

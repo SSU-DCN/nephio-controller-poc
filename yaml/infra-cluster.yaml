@@ -10,7 +10,7 @@ spec:
       nephio.org/region: us-central1
       nephio.org/site-type: aggregation
   namespace: default
-  kubernetesVersion: v1.25.0
+  kubernetesVersion: v1.24.8
   controlPlaneMachineCount: "1"
   kubernetesMachineCount: "1"
   provider: OpenStack

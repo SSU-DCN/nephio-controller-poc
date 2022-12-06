@@ -60,6 +60,8 @@ type ClusterRecord struct {
 var listYamlFileClusterAPI []string
 
 func main() {
+	// kubectlExecutablePath, _ := exec.LookPath("kubectl")
+
 	// currentListCluster := list.newList()
 	kubeConfig = getEnv("KUBECONFIG", "$HOME/.kube/config")
 	fmt.Println("Env KUBECONFIG", kubeConfig)
@@ -69,11 +71,45 @@ func main() {
 	r.Use(middleware.Recoverer)
 	// fmt.Println("KubeConfig file path" + os.Getenv("KUBECONFIG"))
 	r.Get("/test", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(string("Received Request Provider API COntroller")))
+		// construct `go version` command
+		// cmdGoVer := &exec.Cmd{
+		// 	Path:   kubectlExecutablePath,
+		// 	Args:   []string{kubectlExecutablePath, "version"},
+		// 	Stdout: os.Stdout,
+		// 	Stderr: os.Stdout,
+		// }
+
+		// // run `go version` command
+		// if err := cmdGoVer.Run(); err != nil {
+		// 	fmt.Println("Error:", err)
+		// }
+		// command := Command("kubectl", "version")
+		// // set var to get the output
+		// var out bytes.Buffer
+
+		// // set the output to our variable
+		// command.Stdout = &out
+		// err := command.Run()
+		// if err != nil {
+		// 	log.Println(err)
+		// }
+
+		// fmt.Println(out.String())
+		res, err := exec.Command("./kubectl", "version").Output()
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("OUTPUT: %s", res)
+		resclusterapi, errclapi := exec.Command("./clusterctl", "version").Output()
+		if errclapi != nil {
+			panic(errclapi)
+		}
+		fmt.Printf("OUTPUT: %s", resclusterapi)
+		w.Write([]byte(string("clusterctl version\n:" + string(resclusterapi) + string("\n kubectl version: \n") + string(res))))
 	})
 	r.Get("/getcluster", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Received Get Cluster Request")
-		prg := "kubectl"
+		prg := "./kubectl"
 		arg1 := "get"
 		arg2 := "cluster"
 		arg3 := "-A"
@@ -90,7 +126,9 @@ func main() {
 		var getClusterResult []Message
 		trimmedString := strings.TrimSpace(string(stdout))
 		listTrimmedString := strings.Split(trimmedString, "\n")
-
+		if len(listTrimmedString) < 2 {
+			w.Write([]byte(string(stdout)))
+		}
 		for i, str := range listTrimmedString {
 			if i != 0 {
 				splitStr := strings.Fields(str)
@@ -110,7 +148,7 @@ func main() {
 
 	r.Get("/getkubeadmcontrolplanes", func(w http.ResponseWriter, r *http.Request) {
 
-		prg := "kubectl"
+		prg := "./kubectl"
 		arg1 := "get"
 		arg2 := "kubeadmcontrolplane"
 		arg3 := "-A"
@@ -128,7 +166,9 @@ func main() {
 		var getClusterResult []Message
 		trimmedString := strings.TrimSpace(string(stdout))
 		listTrimmedString := strings.Split(trimmedString, "\n")
-
+		if len(listTrimmedString) < 2 {
+			w.Write([]byte(string(stdout)))
+		}
 		for i, str := range listTrimmedString {
 			if i != 0 {
 				splitStr := strings.Fields(str)
@@ -152,7 +192,7 @@ func main() {
 		if len(clusterName) < 1 {
 			fmt.Println("Missing clustername field in request")
 		}
-		prg := "clusterctl"
+		prg := "./clusterctl"
 		arg1 := "get"
 		arg2 := "kubeconfig"
 		// argKubeConfig := "--kubeconfig " + kubeConfig
@@ -194,18 +234,24 @@ func main() {
 		fmt.Println((clusterConfig))
 		fmt.Println("Before Applying cluster YAML FIle")
 		clusterYamlFile, ok := generateClusterYamlFile(clusterConfig)
+		fmt.Println("Print a part of yaml file")
 		if ok {
-			prg := "kubectl"
-			arg1 := "apply -f"
-			argKubeConfig := "--kubeconfig " + kubeConfig
-			cmd := exec.Command(prg, arg1, clusterYamlFile, argKubeConfig)
+			prg := "./kubectl"
+			arg1 := "apply"
+			arg2 := "-f"
+			argKubeConfig := "--kubeconfig"
+			fmt.Println("Applying cluster template file: ", clusterYamlFile)
+			cmd := exec.Command(prg, arg1, arg2, clusterYamlFile, argKubeConfig, kubeConfig)
 			// Get the result from kubectl and send to Infra Controller
+			fmt.Println("Print command: ", cmd.Path, cmd.Args, cmd.Env)
 			stdout1, err := cmd.Output()
 
 			if err != nil {
+				fmt.Println("Error applying cluster occurred")
 				fmt.Println(err.Error())
-				log.Fatal(err)
+				// log.Fatal(err)
 			}
+
 			fmt.Println("Output kubectl apply -f ", string(stdout1))
 			listYamlFileClusterAPI = append(listYamlFileClusterAPI, clusterYamlFile)
 		}
@@ -262,25 +308,31 @@ func createTempFolder(nameCluster string) string {
 }
 func generateClusterYamlFile(record ClusterRecord) (string, bool) {
 	fmt.Println("Generate Cluster Yaml File", record.Name)
-	arg := "clusterctl"
+	arg := "./clusterctl"
 	arg1 := "generate"
 	arg2 := "cluster"
 	// clusterctl generate cluster capi-quickstart   --kubernetes-version v1.23.5   --control-plane-machine-count=3   --worker-machine-count=3   > capi-quickstart.yaml
-	argK8sVersion := "--kubernetes-version v1.23.5"
-	argControlPlaneMachineCount := "--control-plane-machine-count=" + record.ControlPlaneMachineCount
-	argWorkerMachineCount := "--worker-machine-count=" + record.KubernetesMachineCount
-	cmd := exec.Command(arg, arg1, arg2, record.Name, argK8sVersion, argControlPlaneMachineCount, argWorkerMachineCount)
+	argK8sVersion := "--kubernetes-version"
+	argControlPlaneMachineCount := "--control-plane-machine-count"
+	argWorkerMachineCount := "--worker-machine-count"
+	cmd := exec.Command(arg, arg1, arg2, record.Name, argK8sVersion, record.KubernetesVersion, argControlPlaneMachineCount, record.ControlPlaneMachineCount, argWorkerMachineCount, record.KubernetesMachineCount)
+	fmt.Println("Print command: ", cmd.Path, cmd.Args, cmd.Env)
 	stdout, err := cmd.Output()
-	fmt.Println("stdout", string(stdout))
+
 	if err != nil {
+		fmt.Println("Error occurred")
 		fmt.Println(err.Error())
-		log.Fatal(err)
 		return string(stdout), false
 	}
+	fmt.Println("stdout", string(stdout))
 	// Create folder
+
 	tempFolder := createTempFolder(record.Name)
+	fmt.Println("Create  temp folder", tempFolder)
 	templateClusterFile := filepath.Join(tempFolder, record.Name)
+	fmt.Println("Create  temp file", templateClusterFile)
 	err = os.WriteFile(templateClusterFile, stdout, 0777)
+	fmt.Println("Write  temp file", templateClusterFile)
 	if err != nil {
 		fmt.Println(err.Error())
 		log.Fatal(err)
@@ -288,4 +340,19 @@ func generateClusterYamlFile(record ClusterRecord) (string, bool) {
 	}
 
 	return templateClusterFile, true
+}
+func Command(name string, arg ...string) *exec.Cmd {
+	cmd := &exec.Cmd{
+		Path: name,
+		Args: append([]string{name}, arg...),
+	}
+	if filepath.Base(name) == name {
+		if lp, err := exec.LookPath(name); err != nil {
+			// cmd.lookPathErr  = err
+			fmt.Println("Error lookpath")
+		} else {
+			cmd.Path = lp
+		}
+	}
+	return cmd
 }
